@@ -104,7 +104,13 @@ object Starter {
             col.addView(row)
             col.addView(ui.rule(soft = true))
         }
-        col.addView(ui.text("More in Library → + Add → Free catalogs.", 12.5f, p.soft).also { ui.margins(it, 18, 12, 18, 8) })
+        col.addView(ui.mono("Browse 75,000+ free books →", 11f, p.text).apply {
+            setPadding(ui.dp(18), ui.dp(16), ui.dp(18), ui.dp(12))
+            ui.tappable(this, {
+                host.dismissSheet()
+                host.push(CatalogsScreen(host))
+            })
+        })
         host.showSheet(col)
     }
 }

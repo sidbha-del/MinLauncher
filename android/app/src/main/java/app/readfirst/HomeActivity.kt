@@ -78,6 +78,7 @@ class HomeActivity : Activity() {
         stack.addLast(HomeScreen(this))
         if (!prefs.setupDone) stack.addLast(SetupScreen(this))
         render(animate = false)
+        handleWidgetAction(intent)
 
         prefs.addListener(onPrefs)
         library.addListener(onLibrary)
@@ -119,6 +120,7 @@ class HomeActivity : Activity() {
     override fun onPause() {
         visible = false
         NowPlaying.get(this).stop()
+        app.readfirst.widget.ReadingWidget.updateAll(this)
         super.onPause()
     }
 
@@ -312,9 +314,20 @@ class HomeActivity : Activity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (handleWidgetAction(intent)) return
         if (intent.hasCategory(Intent.CATEGORY_HOME) || intent.action == Intent.ACTION_MAIN) {
             if (prefs.setupDone) goHome() else dismissSheet()
         }
+    }
+
+    /** Links from the widget: the free-books shelf, or becoming the home screen. */
+    private fun handleWidgetAction(intent: Intent?): Boolean {
+        when (intent?.action) {
+            app.readfirst.widget.ReadingWidget.ACTION_FREE_BOOKS -> root.post { app.readfirst.ui.Starter.show(this) }
+            app.readfirst.widget.ReadingWidget.ACTION_MAKE_HOME -> app.readfirst.data.HomeRole.requestDefault(this)
+            else -> return false
+        }
+        return true
     }
 
     companion object {

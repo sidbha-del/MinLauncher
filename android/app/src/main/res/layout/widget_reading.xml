@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ReadFirst widget: where you stopped, one tap to continue, and today's reading vs scrolling.
+     Colours are set in code from the chosen ink and page. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFF4F1EA"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/w_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:letterSpacing="0.06"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="NOW READING"
+        android:textColor="#FF7B7267"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/w_excerpt"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:fontFamily="serif"
+        android:lineSpacingMultiplier="1.25"
+        android:maxLines="8"
+        android:text="Your book opens here, on the page where you stopped."
+        android:textColor="#FF29251F"
+        android:textSize="16sp"
+        android:textStyle="italic" />
+
+    <LinearLayout
+        android:id="@+id/w_book"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/w_cover"
+            android:layout_width="34dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="12dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            android:contentDescription="@null" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/w_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="serif"
+                android:maxLines="2"
+                android:text="ReadFirst"
+                android:textColor="#FF29251F"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/w_author"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="#FF7B7267"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/w_progress"
+        android:layout_width="match_parent"
+        android:layout_height="7dp"
+        android:layout_marginTop="10dp"
+        android:scaleType="fitXY"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/w_stats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:fontFamily="monospace"
+        android:letterSpacing="0.05"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#FF29251F"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/w_continue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="#FF29251F"
+        android:gravity="center"
+        android:letterSpacing="0.08"
+        android:paddingTop="11dp"
+        android:paddingBottom="11dp"
+        android:text="CONTINUE READING"
+        android:textColor="#FFF4F1EA"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/w_free"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="monospace"
+            android:gravity="start"
+            android:letterSpacing="0.05"
+            android:paddingTop="8dp"
+            android:paddingBottom="2dp"
+            android:text="+ FREE BOOKS"
+            android:textColor="#FF7B7267"
+            android:textSize="9sp" />
+
+        <TextView
+            android:id="@+id/w_home"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:gravity="end"
+            android:letterSpacing="0.05"
+            android:paddingTop="8dp"
+            android:paddingBottom="2dp"
+            android:text="MAKE IT MY HOME SCREEN"
+            android:textColor="#FF7B7267"
+            android:textSize="9sp" />
+    </LinearLayout>
+</LinearLayout>

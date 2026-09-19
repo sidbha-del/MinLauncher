@@ -85,6 +85,11 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
         list.addView(ui.row("Default home screen", if (isDefault) "On" else "Set now") {
             if (isDefault) HomeRole.openHomeSettings(host) else HomeRole.requestDefault(host)
         })
+        list.addView(ui.row("Add the ReadFirst widget", "Any home screen") {
+            if (!app.readfirst.widget.ReadingWidget.requestPin(host)) {
+                Toast.makeText(host, "Long-press your home screen → Widgets → ReadFirst", Toast.LENGTH_LONG).show()
+            }
+        })
         list.addView(ui.row("Pinned apps", "${prefs.pinned.size} / 4") { pinnedSheet() })
         list.addView(ui.row("Open previous launcher once") {
             if (!HomeRole.openOtherLauncherOnce(host)) Toast.makeText(host, "No other home app found", Toast.LENGTH_SHORT).show()
@@ -192,6 +197,14 @@ class SetupScreen(host: HomeActivity) : Screen(host) {
         val isHome = HomeRole.isDefault(host)
         val hasBooks = host.library.books.isNotEmpty() || host.library.folders.isNotEmpty()
         col.addView(step("1", isHome, "Make this your home screen", "Android asks once. Easy to undo.") { HomeRole.requestDefault(host) })
+        if (!isHome) col.addView(ui.mono("Not ready to switch? Add the widget instead →", 10.5f, p.text).apply {
+            setPadding(ui.dp(56), ui.dp(2), ui.dp(18), ui.dp(12))
+            ui.tappable(this, {
+                if (!app.readfirst.widget.ReadingWidget.requestPin(host)) {
+                    Toast.makeText(host, "Long-press your home screen → Widgets → ReadFirst", Toast.LENGTH_LONG).show()
+                }
+            })
+        })
         col.addView(step("2", hasBooks, "Add your books", "A free classic in one tap, or your own EPUB, PDF, TXT.") { AddBooks.show(host) })
         val ink = step("3", false, "Choose your ink", "Color ink or Black ink.", null)
         col.addView(ink)

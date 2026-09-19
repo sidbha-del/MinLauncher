@@ -102,6 +102,7 @@ class ReaderActivity : Activity() {
         super.onPause()
         readingTimer.stop()
         save()
+        app.readfirst.widget.ReadingWidget.updateAll(this)
     }
 
     override fun onDestroy() {

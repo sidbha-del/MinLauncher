@@ -77,6 +77,9 @@ Cost of not solving: the reading intention stays one tap away from being overrid
 | 1b | Other reading apps (handoff) | Built | Library section below the shelves listing installed Kindle, Play Books, Kobo, Libby, Everand, Pratilipi, Wattpad, Moon+, ReadEra, KOReader, Librera, Lithium, PocketBook; tap opens the app. No attempt to read DRM'd books or progress |
 | 2 | Open Library metadata & covers | Built | Fills missing titles/authors/covers only; conservative matching (one-word titles need 10+ editions); one request per second; Settings toggle; per-book "Reset" undoes a match |
 | 3 | OPDS catalog client | Built | OPDS 1.x: Project Gutenberg built in (browse, search, paging, merged per-edition book pages, EPUB3-first downloads into app storage), Standard Ebooks with Patrons Circle sign-in, any user-added Calibre/Kavita/OPDS server with Basic auth |
+| 3b | Pause before distracting apps + Home time split | Built | Pause (5 s, "Read instead") before suggested feed apps (installed ones only; WhatsApp/LinkedIn excluded), user-editable. Home "Today" bar: Reading (reader timer + reading apps + audiobook playback) / Work / Scrolling / Other via Usage access. Only covers launches from ReadFirst |
+| 3c | Phone check | Built | Home role lost, background restriction, lost folder access, Now listening unbound (auto-rebind), brand battery/autostart pages |
+| 3d | Companion widget | Built | Resizable 4×2 → near full page on any launcher: where you stopped, Continue, today's read vs scroll, "+ Free books" (starter shelf → catalogs), "Make it my home screen". Funnel metric: widget users who switch to the full launcher |
 | 4 | LibriVox pairing + built-in read-aloud | Planned | Public-domain audio for the same Gutenberg titles; text-to-speech for our own books keeps position in sync |
 
 Out of bounds: shadow libraries (piracy, store rejection); reading Kindle/Libby book content or progress (DRM, no API — handoff only).
