@@ -94,7 +94,9 @@ object Opds {
 
     fun searchUrl(template: String, query: String): String =
         template.replace("{searchTerms}", URLEncoder.encode(query.trim(), "UTF-8"))
-            .replace(Regex("\\{[a-zA-Z:]+\\?}"), "") // optional OpenSearch parameters left empty
+            // Optional OpenSearch parameters are left empty. Both braces escaped: Android's regex
+            // engine (ICU) rejects a bare "}", although the desktop JVM used by unit tests accepts it.
+            .replace(Regex("\\{[a-zA-Z:]+\\?\\}"), "")
 
     /** Resolves [href] against [base]; data: URIs and absolute URLs pass through. */
     fun resolve(base: String, href: String): String {
