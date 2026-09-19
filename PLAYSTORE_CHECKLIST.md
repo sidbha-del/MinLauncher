@@ -11,20 +11,22 @@ Open Play Console → **Home → your developer account → "Production access"*
 
 Either way the work below is the same. Start the closed test **today**, because the 14-day clock is the long pole.
 
+**Answer (2026-09-19):** the developer account was created in 2026. If it's a **personal** account, closed testing applies: internal and closed testing go live today, and production is possible from about day 15. If it was registered as an **organisation**, production is available now. Check Play Console → Settings → Developer account → Account details.
+
 ## 1. Decisions that are permanent (do before the first upload)
 
 | # | Task | Owner | Notes |
 | --- | --- | --- | --- |
 | 1.1 | **Package name** | You | Currently `app.booklauncher`. It can never change after upload. Prefer a name you control, e.g. `com.<yourdomain>.booklauncher`. Check that it's free by trying to create the app. |
 | 1.2 | **App name on Play** | You | "Book Launcher" is generic and may clash in search. Options: "Book Launcher: Read First", "Shelf: Book Home Screen". Max 30 chars. |
-| 1.3 | **Upload key** | You + Code | `keytool -genkey -v -keystore booklauncher-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`, then create `android/keystore.properties` (already git-ignored). **Back up the .jks and passwords in two places.** Enrol in Play App Signing (the default). |
+| 1.3 | **Upload key** | **Done** | `android/booklauncher-upload.jks` + `android/keystore.properties` (random password, both git-ignored, never pushed). **Copy both files to two safe places** (password manager + a private drive). With Play App Signing (the default), Google holds the real app key, so a lost upload key can be reset through Play support. Signed bundle: `android/app/build/outputs/bundle/release/app-release.aab`. |
 | 1.4 | **Support email** | You | Required and public on the listing. Use a support alias, not your personal Gmail. |
 
 ## 2. Build (Code, same day)
 
 | # | Task | Status |
 | --- | --- | --- |
-| 2.1 | `git init` + first commit (the project isn't versioned yet) | Waiting on your OK |
+| 2.1 | Version control | **Done**: private repo github.com/sidbha-del/MinLauncher |
 | 2.2 | `versionCode 1`, `versionName 1.0.0` | Done in this pass |
 | 2.3 | targetSdk 36, minSdk 26, R8 + resource shrinking on | Already set |
 | 2.4 | Debug-only test hooks excluded from release (`src/debug/`) | Already so |
