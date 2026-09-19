@@ -1,0 +1,14 @@
+# Local tool settings
+.claude/
+
+# Signing: never commit keys or passwords
+*.jks
+*.keystore
+keystore.properties
+
+# Build output and local machine config (android/.gitignore covers these too)
+**/build/
+**/.gradle/
+**/local.properties
+.idea/
+*.iml

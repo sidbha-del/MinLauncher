@@ -1,0 +1,97 @@
+## Section 1: Market Snapshot
+
+* **App Economy Reality:** The mobile app market operates on a strict power law. In 2026, approximately 81% of apps never reach $1,000 monthly recurring revenue (MRR), while a well-executed niche subscription app can hit $10,000 to $50,000 MRR within six months.
+* **Monetization Dynamics:** Subscriptions vastly outperform advertising for solo developers. Securing 1,000 subscribers at $10 per month generates more revenue than 100,000 ad-supported users. Trial-to-paid conversion rates in productivity categories range from 40% to 50%.
+* **Incumbent Vulnerability:** Traditional customization launchers (Nova, Action) rely on one-time purchases and are stagnating. Demand has shifted toward behavioral modification. Applications targeting digital minimalism command high subscription rates because they act as "painkillers" for screen addiction.
+
+## Section 2: 25-30 Ideas
+
+**Digital Detox & Behavioral Modification**
+
+1. **Dopamine Budget Launcher:** Grants a daily allowance of "tokens." Opening distracting apps costs tokens.
+2. **Intent-Typing Launcher:** Requires typing a 15-word stated intention before a social app unlocks.
+3. **Grayscale-by-Usage Launcher:** Screen saturation drops to zero as screen time limits are approached.
+4. **Charity Penalty Launcher:** Automatically deducts a micro-transaction to charity when time limits are bypassed.
+5. **Breathing Exercise Launcher:** Forces a 30-second guided breathing animation before opening designated apps.
+6. **Social Shame Launcher:** Posts to a designated accountability partner if social media is accessed during work hours.
+
+**Text-First & Power User**
+7. **CLI (Command Line) Launcher:** No icons. A blinking cursor where users type commands (e.g., "msg john", "ig").
+8. **Markdown Home:** The home screen is a plain text file. Apps are launched via bracketed hyperlinks.
+9. **Search-Only Minimalist:** A single search bar. No app drawer. If you don't know the app name, you cannot open it.
+10. **Regex Launcher:** Allows defining custom launch rules based on time, battery, and regex text matching.
+11. **Logcat Home:** Background displays a live system log. Targeted strictly at Android developers.
+
+**Temporal & Routine-Based**
+12. **Mode-Switcher Launcher:** Completely distinct home screens for "Work", "Commute", and "Home" triggered by NFC tags.
+13. **Pomodoro Launcher:** The entire OS locks down into a 25-minute focus timer, allowing only phone and messages.
+14. **Sunset-Lockdown Launcher:** Progressively hides non-essential apps as the sun sets in the user's location.
+15. **Morning-Routine Launcher:** Only allows access to fitness, podcast, and weather apps before 9:00 AM.
+16. **Calendar-First Launcher:** The UI is an agenda list. Apps must be launched from within scheduled calendar blocks.
+
+**Accessibility & Niche Hardware**
+17. **E-Ink Optimizer:** Strips all animations, relies on high-contrast outlines, and forces page-refresh flashes.
+18. **High-Contrast Sandbox:** Massive tap targets with locked configurations for visually impaired users.
+19. **Audio-Nav Launcher:** Screen remains black. Navigation uses spatial audio and haptic feedback.
+20. **Left-Handed Ergonomic:** Arcs all interactive elements exclusively to the bottom-left corner of the screen.
+21. **Car-Mode Permanent:** Gig-worker focused UI with massive map integrations and locked-on screen states.
+
+**Opposite of Obvious & Experimental**
+22. **Decaying Icons:** App icons physically shrink the less they are used, eventually disappearing.
+23. **Randomized Grid:** Shuffles app positions every unlock to break muscle memory and mindless tapping.
+24. **Single-App Forced:** Hides everything except the most recently used app.
+25. **Widget-Only Home:** Disables app icons entirely. Users must rely on provided widgets for interaction.
+26. **Flashcard Unlocker:** Requires translating a vocabulary word correctly to access the app drawer.
+
+## Section 3: Rubric & Finalists
+
+**Selection Rubric**
+To be viable for a solo developer, the concept must pass three criteria:
+
+1. **Maintenance Burden:** Must rely on stable, public Android APIs (e.g., `UsageStatsManager`, `PackageManager`) avoiding fragile UI scraping or constant update cycles.
+2. **Monetization Potential:** Must solve an active psychological or productivity pain point capable of driving a $5 to $10 monthly subscription.
+3. **Visual Simplicity:** Must avoid complex graphics, icon pack support, or custom layout engines that consume development time.
+
+**The 3 Finalists**
+
+1. **Dopamine Budget Launcher** (Gamified screen time reduction)
+2. **CLI (Command Line) Launcher** (Ultra-minimalist power user tool)
+3. **Pomodoro Launcher** (Strict productivity enforcement)
+
+**Cut Rationale**
+
+* **Intent-Typing, Breathing Exercise, Flashcard:** Add too much active friction. Users will uninstall within 48 hours.
+* **Charity Penalty:** Violates Google Play billing policies regarding external transactions for app features.
+* **Grayscale-by-Usage:** Requires root access or complex accessibility overlays that OEM skins frequently kill.
+* **Social Shame:** Privacy liabilities and complex backend requirements for a solo developer.
+* **Markdown Home, Search-Only:** Monetization potential is zero. Purely a hobbyist novelty.
+* **Regex, Logcat:** Total addressable market is too small to sustain a business.
+* **Mode-Switcher, Sunset-Lockdown, Morning-Routine:** Android native Focus Modes already handle this natively.
+* **Calendar-First:** Requires complex parsing of various calendar APIs which are prone to syncing errors.
+* **E-Ink, Audio-Nav, Left-Handed, Car-Mode, Sandbox:** Hardware niches are too small for high MRR.
+* **Decaying Icons:** Requires rendering custom icon sizes dynamically, leading to pixelation and layout bugs.
+* **Randomized Grid:** Hostile UX. High churn rate.
+* **Single-App Forced, Widget-Only:** Breaks core Android usability.
+
+## Section 4: Finalist Execution Options
+
+| Finalist | Option A (Low Effort/Risk) | Option B (Medium Effort/Risk) | Option C (High Novelty) | Option D (High Risk/Cost) |
+| --- | --- | --- | --- | --- |
+| **Dopamine Budget** | **Static Daily Allowance:** Users get 20 taps for social apps daily. Simple counter on home screen. | **Categorized Budgets:** Different token pools for "Entertainment" vs "Social". | **Variable Pricing:** App costs increase (e.g., opening Instagram the 5th time costs 5x tokens). | **Peer-to-Peer Economy:** Users trade tokens with a partner. Requires backend servers. |
+| **CLI Launcher** | **Basic Text Matching:** Type "calc", hit enter, calculator opens. | **Alias Mapping:** Users can define custom text shortcuts for specific apps. | **Fuzzy Search:** Implements local typo-correction so "ig" opens Instagram even if misspelled. | **Plugin System:** Allows users to write Python/Lua scripts that execute from the prompt. |
+| **Pomodoro Launcher** | **Simple Timer UI:** A 25-minute countdown blocks the app drawer entirely. | **Task-Linked Timers:** Requires typing a specific task before the timer starts. | **Strict Lock-in:** Prevents the user from changing the default launcher while the timer is active. | **Biometric Unlock:** Requires a specific heart rate drop (via smartwatch) to unlock early. |
+
+## Section 5: Final Recommendation
+
+**Firm Recommendation:** Build the **Dopamine Budget Launcher using Option C (Variable Pricing)**.
+
+The CLI launcher serves a tiny niche of tech-enthusiasts who refuse to pay subscriptions. The Pomodoro launcher is easily replicated by free apps. The Dopamine Budget directly targets screen addiction, a proven high-revenue category. By implementing Variable Pricing (Option C), you add a unique gamification layer that differentiates it from generic screen-time blockers. It relies purely on the standard Android `PackageManager` (to launch apps) and `SharedPreferences` (to store token counts), making the technical footprint exceptionally light and easily manageable for a solo developer.
+
+## Section 6: Riskiest Assumption & Killer Test
+
+* **Riskiest Assumption:** Android OEMs (Samsung, Xiaomi, Oppo) have aggressive battery optimization protocols that frequently terminate background services. If the launcher cannot reliably track app usage time or intercept app launches because the system killed the background listener, the token economy breaks and the product is useless.
+* **Cheapest Killer Test:** Build a headless Android app (no UI) that attempts to log the exact timestamp of every app opened on a Xiaomi and Samsung device over a continuous 72-hour period. If the logging service is killed by the OS and fails to restart automatically, the core technical premise is invalid.
+
+## Section 7: Strongest Case Against the Recommendation
+
+The ultimate failure point of any third-party digital minimalism launcher is the "bypass friction." Users experiencing a severe dopamine craving can simply navigate to Android settings, change the default home app back to Pixel Launcher or OneUI, and instantly bypass the token budget. Because Android strictly prevents apps from blocking access to system settings (for security and anti-malware reasons), you cannot lock the user into the launcher. You are relying entirely on the user's willpower to not disable the app, which fundamentally contradicts the product's premise of enforcing discipline when willpower fails.

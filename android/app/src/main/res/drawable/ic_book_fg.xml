@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- An open book: two pages meeting at a spine, inside the adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFF3EFE6"
+        android:pathData="M54,40 C47,35 38,34 32,35 L32,70 C38,69 47,70 54,75 Z" />
+    <path
+        android:fillColor="#FFF3EFE6"
+        android:pathData="M54,40 C61,35 70,34 76,35 L76,70 C70,69 61,70 54,75 Z" />
+    <path
+        android:fillColor="#FF8C4A2F"
+        android:pathData="M53,41 L55,41 L55,73 L53,73 Z" />
+</vector>
