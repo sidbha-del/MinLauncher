@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Book Launcher</string>
+    <string name="app_name">ReadFirst</string>
     <string name="no_picker">No file picker is available on this phone.</string>
     <string name="scanning_folder">Looking for books in that folder…</string>
     <string name="skipped_files">Skipped %1$d file(s) that aren\'t EPUB, PDF or TXT.</string>

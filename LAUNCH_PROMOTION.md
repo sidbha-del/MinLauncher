@@ -1,18 +1,18 @@
-# Promotion: Book Launcher and MIRA, starting today
+# Promotion: ReadFirst and MIRA, starting today
 
-2026-09-19. Two products with different buyers: **Book Launcher** is chosen by the person who uses it; **MIRA** is chosen by a *caregiver* for someone else. Promote them separately, and link them with one founder story.
+2026-09-19. Two products with different buyers: **ReadFirst** is chosen by the person who uses it; **MIRA** is chosen by a *caregiver* for someone else. Promote them separately, and link them with one founder story.
 
 **Umbrella line:** *"A home screen should serve the person holding the phone, not the apps fighting for it."*
 
 ## Rules for every post
 
-- Use only numbers we measured: Book Launcher's release APK is **147 KB** (release build run on a Galaxy M42), with no runtime libraries, tested on three phones. Quote a MIRA size only after building its release APK. Nothing from the Gemini plans that wasn't measured.
+- Use only numbers we measured: ReadFirst's release APK is **147 KB** (release build run on a Galaxy M42), with no runtime libraries, tested on three phones. Quote a MIRA size only after building its release APK. Nothing from the Gemini plans that wasn't measured.
 - The demo **is** the pitch: a 7-second screen recording, *unlock → you're on page 43*. Record it today on the Samsung in Night and Sepia.
 - Nothing about MIRA's origin person (health details, names, cities) without their explicit consent.
 
 ---
 
-## Book Launcher
+## ReadFirst
 
 ### Today (free, under 2 hours each)
 
@@ -61,7 +61,7 @@ MIRA's SMS, call and location permissions need Google's declaration review. Let 
 
 ## Measure (weekly)
 
-| Metric | Book Launcher | MIRA |
+| Metric | ReadFirst | MIRA |
 | --- | --- | --- |
 | Installs from each channel | Separate link per channel (Play `referrer` parameter) | Pilot families enrolled |
 | Kept as home screen after 7 and 28 days | **The metric that matters** | Days without a caregiver fix |

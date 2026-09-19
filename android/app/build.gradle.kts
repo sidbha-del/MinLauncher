@@ -13,11 +13,11 @@ val keystoreProps = Properties().apply {
 }
 
 android {
-    namespace = "app.booklauncher"
+    namespace = "app.readfirst"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "app.booklauncher"
+        applicationId = "app.readfirst"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

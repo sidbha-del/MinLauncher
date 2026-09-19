@@ -1,6 +1,6 @@
-# Play Store listing: Book Launcher
+# Play Store listing: ReadFirst
 
-**App name (30):** Book Launcher: Read First
+**App name (30):** ReadFirst: Book Home Screen
 
 **Short description (80):** Unlock your phone into your book. A calm home screen that puts reading first.
 
@@ -8,7 +8,7 @@
 
 Your phone opens on the page you stopped at.
 
-Book Launcher replaces your home screen with the book you're reading: the last few lines, your progress, and one tap to continue. Your apps are still there, one swipe up. They just aren't the first thing you see.
+ReadFirst replaces your home screen with the book you're reading: the last few lines, your progress, and one tap to continue. Your apps are still there, one swipe up. They just aren't the first thing you see.
 
 **Reading, built in**
 • EPUB, PDF and plain-text books, with no other reader app needed

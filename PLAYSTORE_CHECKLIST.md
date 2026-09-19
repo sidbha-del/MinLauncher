@@ -1,6 +1,6 @@
 # Play Store go-live checklist
 
-2026-09-19 · Book Launcher first, MIRA second. Owner column: **You** = needs your account or decision, **Code** = done in the repo.
+2026-09-19 · ReadFirst first, MIRA second. Owner column: **You** = needs your account or decision, **Code** = done in the repo.
 
 ## 0. The blocker that decides "today"
 
@@ -17,8 +17,8 @@ Either way the work below is the same. Start the closed test **today**, because 
 
 | # | Task | Owner | Notes |
 | --- | --- | --- | --- |
-| 1.1 | **Package name** | You | Currently `app.booklauncher`. It can never change after upload. Prefer a name you control, e.g. `com.<yourdomain>.booklauncher`. Check that it's free by trying to create the app. |
-| 1.2 | **App name on Play** | You | "Book Launcher" is generic and may clash in search. Options: "Book Launcher: Read First", "Shelf: Book Home Screen". Max 30 chars. |
+| 1.1 | **Package name** | **Done** | `app.readfirst`. It can never change after the first upload. If Play Console reports it as taken when you create the app, pick another before uploading. |
+| 1.2 | **App name on Play** | **Done** | "ReadFirst: Book Home Screen" (27 of 30 chars). |
 | 1.3 | **Upload key** | **Done** | `android/booklauncher-upload.jks` + `android/keystore.properties` (random password, both git-ignored, never pushed). **Copy both files to two safe places** (password manager + a private drive). With Play App Signing (the default), Google holds the real app key, so a lost upload key can be reset through Play support. Signed bundle: `android/app/build/outputs/bundle/release/app-release.aab`. |
 | 1.4 | **Support email** | You | Required and public on the listing. Use a support alias, not your personal Gmail. |
 
@@ -67,4 +67,4 @@ Either way the work below is the same. Start the closed test **today**, because 
 
 ## MIRA (second, harder)
 
-MIRA asks for **call, SMS and location** permissions. SMS and Call Log are restricted on Play: you must file the **Permissions Declaration Form**, and approval isn't guaranteed. Background location needs its own declaration and video. Plan MIRA's submission as a separate 1–2 week track. Options if SMS is refused: send SOS through the phone's SMS app with an `ACTION_SENDTO` intent (one tap to confirm), or through the backend. Don't block Book Launcher on MIRA.
+MIRA asks for **call, SMS and location** permissions. SMS and Call Log are restricted on Play: you must file the **Permissions Declaration Form**, and approval isn't guaranteed. Background location needs its own declaration and video. Plan MIRA's submission as a separate 1–2 week track. Options if SMS is refused: send SOS through the phone's SMS app with an `ACTION_SENDTO` intent (one tap to confirm), or through the backend. Don't block ReadFirst on MIRA.

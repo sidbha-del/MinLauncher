@@ -1,8 +1,8 @@
-# Book Launcher: Privacy Policy
+# ReadFirst: Privacy Policy
 
 Effective 2026-09-19
 
-Book Launcher is a home-screen app for reading. It has no accounts, no ads and no analytics, and the developer receives no data from your use of it.
+ReadFirst is a home-screen app for reading. It has no accounts, no ads and no analytics, and the developer receives no data from your use of it.
 
 ## What stays on your phone
 Your books, your reading positions, your settings, your library and any catalog passwords you enter are stored only in the app's private storage on your device. Uninstalling the app deletes them. Books in folders you chose are never modified or deleted.
@@ -15,7 +15,8 @@ Only when you use these features:
 These services have their own privacy policies.
 
 ## Permissions
-- **Notification access (optional, off until you allow it):** used only to show what an audiobook app is currently playing, with play and skip controls. Book Launcher does not read, store or send the content of your notifications.
+- **Notification access (optional, off until you allow it):** used only to show what an audiobook app is currently playing, with play and skip controls. ReadFirst does not read, store or send the content of your notifications.
+- **Usage access (optional, off until you allow it):** used only to show on your home screen how today's phone time splits into reading, work and scrolling. It is calculated on your phone and never sent anywhere.
 - **Installed apps:** as a home screen, the app lists your apps to show and open them. The list never leaves your phone.
 - **Files and folders:** only the folders and files you choose through Android's file picker.
 

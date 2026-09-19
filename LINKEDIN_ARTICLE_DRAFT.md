@@ -10,11 +10,11 @@ You unlock your phone dozens of times a day. Every time, the first thing you see
 
 I've been building two Android home screens that start from a different question: **what does the person holding this phone actually need to see first?**
 
-### 1. Book Launcher: your phone opens on your book
+### 1. ReadFirst: your phone opens on your book
 
 [Optional: one line of your own reading story here.] Most people who want to read more don't lack reading apps. The problem is that every unlock leads somewhere else first.
 
-So Book Launcher replaces the home screen with the page I stopped at: the last few lines, my progress, and one tap to continue. My apps are still there, one swipe up. They just aren't the first thing I see.
+So ReadFirst replaces the home screen with the page I stopped at: the last few lines, my progress, and one tap to continue. My apps are still there, one swipe up. They just aren't the first thing I see.
 
 A few things I cared about:
 - **It's a real reader, not a shortcut.** EPUB, PDF and text files open inside it, with typography, page colours (Paper, Sepia, Night) and exact resume.
@@ -34,11 +34,11 @@ MIRA gives the parent big, calm screens: the people they call as photo tiles, a 
 1. **Subtraction is a feature.** Both products are mostly about what isn't on the screen.
 2. **Design for the moment, not the app.** "Unlock" is a moment. Serve it well and the habit follows.
 3. **Small is a strategy.** No libraries meant fast starts on cheap phones, which is exactly where both audiences are.
-4. **The user isn't always the buyer.** Book Launcher is chosen by its reader. MIRA is chosen by a caregiver, and marketing it is a completely different job.
+4. **The user isn't always the buyer.** ReadFirst is chosen by its reader. MIRA is chosen by a caregiver, and marketing it is a completely different job.
 
 ### I'm looking for 12 early readers
 
-Book Launcher is entering Google Play testing this week. I need **12 people who want to read more** to use it as their home screen for 14 days and tell me honestly what breaks. Comment "READ" or sign up here: [link]
+ReadFirst is entering Google Play testing this week. I need **12 people who want to read more** to use it as their home screen for 14 days and tell me honestly what breaks. Comment "READ" or sign up here: [link]
 
 If you look after a parent's phone from another city and want to try MIRA, message me.
 
