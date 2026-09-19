@@ -24,4 +24,7 @@ These services have their own privacy policies.
 The app isn't directed at children under 13.
 
 ## Contact
-[support email]
+If you have questions or concerns about this privacy policy, contact: [rashidua82@gmail.com](mailto:rashidua82@gmail.com)
+
+---
+*Published via GitHub Pages:* [https://sidbha-del.github.io/MinLauncher/](https://sidbha-del.github.io/MinLauncher/)

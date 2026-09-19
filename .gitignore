@@ -12,3 +12,4 @@ keystore.properties
 **/local.properties
 .idea/
 *.iml
+*.zip

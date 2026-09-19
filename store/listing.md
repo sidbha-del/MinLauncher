@@ -37,4 +37,4 @@ ReadFirst replaces your home screen with the book you're reading: the last few l
 
 Switch back to your old home screen any time from Settings.
 
-**Category:** Books & Reference · **Contact:** a support alias (not a personal address)
+**Category:** Books & Reference · **Contact:** rashidua82@gmail.com · **Privacy:** https://sidbha-del.github.io/MinLauncher/

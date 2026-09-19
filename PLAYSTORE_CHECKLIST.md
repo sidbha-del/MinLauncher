@@ -20,7 +20,7 @@ Either way the work below is the same. Start the closed test **today**, because 
 | 1.1 | **Package name** | **Done** | `app.readfirst`. It can never change after the first upload. If Play Console reports it as taken when you create the app, pick another before uploading. |
 | 1.2 | **App name on Play** | **Done** | "ReadFirst: Book Home Screen" (27 of 30 chars). |
 | 1.3 | **Upload key** | **Done** | `android/booklauncher-upload.jks` + `android/keystore.properties` (random password, both git-ignored, never pushed). **Copy both files to two safe places** (password manager + a private drive). With Play App Signing (the default), Google holds the real app key, so a lost upload key can be reset through Play support. Signed bundle: `android/app/build/outputs/bundle/release/app-release.aab`. |
-| 1.4 | **Support email** | You | Required and public on the listing. Use a support alias, not your personal Gmail. |
+| 1.4 | **Support email** | **Done** | `rashidua82@gmail.com` |
 
 ## 2. Build (Code, same day)
 
@@ -37,7 +37,7 @@ Either way the work below is the same. Start the closed test **today**, because 
 
 | # | Form | What to answer |
 | --- | --- | --- |
-| 3.1 | **Privacy policy URL** | Required. A draft is in `store/privacy-policy.md`. Host it on GitHub Pages / Google Sites. |
+| 3.1 | **Privacy policy URL** | **Done**: `https://sidbha-del.github.io/MinLauncher/` (hosted via GitHub Pages, source in `docs/` and `store/privacy-policy.md`). |
 | 3.2 | **Data safety** | No data collected or shared. Network use: book titles sent to Open Library for cover lookup (optional, can be switched off); downloads from Gutenberg / Standard Ebooks / user-added catalogs. No account, no analytics, no ads. Data stays on the device. |
 | 3.3 | **Ads** | No ads. |
 | 3.4 | **App access** | All features available without login (Standard Ebooks sign-in is optional). |
