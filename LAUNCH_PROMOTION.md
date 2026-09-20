@@ -6,7 +6,7 @@
 
 ## Rules for every post
 
-- Use only numbers we measured: ReadFirst's release APK is **147 KB** (release build run on a Galaxy M42), with no runtime libraries, tested on three phones. Quote a MIRA size only after building its release APK. Nothing from the Gemini plans that wasn't measured.
+- Use only numbers we measured: ReadFirst's release APK is **169 KB** (release build run on a Galaxy M42), with no runtime libraries, tested on three phones. Quote a MIRA size only after building its release APK. Nothing from the Gemini plans that wasn't measured.
 - The demo **is** the pitch: a 7-second screen recording, *unlock → you're on page 43*. Record it today on the Samsung in Night and Sepia.
 - Nothing about MIRA's origin person (health details, names, cities) without their explicit consent.
 
@@ -23,7 +23,7 @@
 ### This week
 
 4. **E-ink phone owners: the sharpest niche.** Boox Palma, Bigme HiBreak, Hisense and Minimal Phone owners actively hunt for launchers, and Black ink (no animation, pure black and white, monochrome icons) was built for their screens. Post in r/eink, r/BooxPalma and r/dumbphones, and send the APK to 5 YouTubers who review e-ink phones. Small audience, near-certain fit, loud word of mouth.
-5. **Show HN / r/androiddev: the craft story.** *"Show HN: a 147 KB Android launcher with its own EPUB engine and no libraries."* Engineers share tiny, dependency-free apps. Lead with how it's built, not with digital detox.
+5. **Show HN / r/androiddev: the craft story.** *"Show HN: a 169 KB Android launcher with its own EPUB engine and no libraries."* Engineers share tiny, dependency-free apps. Lead with how it's built, not with digital detox.
 6. **The physical bookmark.** Print 500 bookmarks (low cost): one side *"Your phone could open on this book"*, the other a QR code to the tester sign-up. Leave them with indie bookstores, library help desks and cafés with book corners. It's where readers already are, and nobody else in the app world is doing it.
 
 ### Out-of-the-box plays

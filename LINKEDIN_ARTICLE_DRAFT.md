@@ -1,44 +1,75 @@
 # LinkedIn article (draft)
 
-> Before posting: the MIRA section describes the problem in general terms, not the person it was built for. Add the personal story only if they agree to it. Replace [links] with the tester sign-up form and the Play testing link.
+> Before posting: replace `[TESTER LINK]` with the Play opt-in URL once the closed test is live.
+> Screenshot slots are marked `[SCREENSHOT: …]` — files live in `store/screenshots/`.
+> The MIRA section stays general. Do not add the personal story behind it.
 
 ---
 
-## The home screen is the most important screen nobody designs for you
+## I'm not a reader. That's exactly why I built this.
 
-You unlock your phone dozens of times a day. Every time, the first thing you see was designed by someone else, for someone else's goals: a grid of apps competing for the next minute of your attention.
+I should admit something before I pitch you anything: I have never really been a reader.
 
-I've been building two Android home screens that start from a different question: **what does the person holding this phone actually need to see first?**
+I've wanted to be, for years. I've bought the books. I've made the resolutions. What I actually did every evening was unlock my phone, land on a grid of apps, and lose forty minutes to a feed I won't remember tomorrow.
 
-### 1. ReadFirst: your phone opens on your book
+What finally moved me wasn't discipline. It was **audiobooks**. Something about being read to got past the resistance that print never did. I'm getting through books now, just not in the way I assumed I was supposed to.
 
-[Optional: one line of your own reading story here.] Most people who want to read more don't lack reading apps. The problem is that every unlock leads somewhere else first.
+That's the first thing I'd say to anyone who keeps meaning to read more: **try what works for you.** Paper, phone, e-ink, audio — the format is not the point. Finishing something is.
 
-So ReadFirst replaces the home screen with the page I stopped at: the last few lines, my progress, and one tap to continue. My apps are still there, one swipe up. They just aren't the first thing I see.
+The second thing is that the phone is not neutral. It is actively working against you at the exact moment you're deciding what to do next.
 
-A few things I cared about:
-- **It's a real reader, not a shortcut.** EPUB, PDF and text files open inside it, with typography, page colours (Paper, Sepia, Night) and exact resume.
-- **Free books in one tap.** Project Gutenberg's classics are built in, so a new user is reading within seconds.
-- **A "Black ink" mode** (pure black on white, no animation) for e-ink phones.
-- **It shows your audiobook too.** If Audible or Libby is playing, it sits right under your book.
-- **It's tiny.** The release build is under 150 KB, with no third-party libraries, so it suits budget phones.
+[SCREENSHOT: Home — the current book, progress, "Continue reading"]
 
-### 2. MIRA: a home screen for parents, set up by their children
+### The home screen is the most important screen nobody designs for you
 
-The second launcher came from a problem many families share: an ageing parent in one city, children in another, and a phone that has become confusing. Text too small, calls missed because the ringer isn't heard, and every small problem needs someone to physically be there.
+You unlock your phone dozens of times a day, and every time the first thing you see was designed by someone else, for someone else's goals.
 
-MIRA gives the parent big, calm screens: the people they call as photo tiles, a one-tap "Get help", and the day and date always visible. The design principle is **the family configures, the parent just uses**, including from another city.
+So I built **ReadFirst**, an Android launcher that replaces the home screen with the page you stopped at: the last few lines, your progress, and one tap to continue. Your apps are still there, one swipe up. They just aren't the first thing you see.
 
-### What building both taught me
+It's not a willpower app. It doesn't lecture you or lock anything. It changes what's in front of you at the moment the decision gets made — and for apps you've marked as distracting, it pauses for five seconds and offers your book first. You can still go to the feed. You just have to mean it.
+
+[SCREENSHOT: the pause before a distracting app]
+
+### The other thing stopping people: books cost money
+
+The advice "just read more" usually comes with a shopping list — an e-reader, a subscription, a stack of hardbacks. That's a strange amount of commitment to ask of someone who isn't yet sure they'll stick with it.
+
+So ReadFirst has free, **legal** books built in. Project Gutenberg's 75,000-plus public-domain titles are one tap away — Sherlock Holmes, Pride and Prejudice, Meditations, Tagore — with more libraries a tap further. No account, no trial, nothing to cancel.
+
+Try the habit before you spend anything on it. If it sticks, then buy the e-reader.
+
+[SCREENSHOT: the free catalogue, showing search results]
+
+### What I cared about building it
+
+- **A real reader, not a shortcut.** EPUB, PDF and text open inside it, with proper typography, page colours and exact resume.
+- **Black ink mode** — pure black on white, no animation — for e-ink phones and tablets.
+- **Your audiobook sits under your book**, because that's how I actually read.
+- **It's small.** The release build is about 169 KB with no third-party libraries, so it runs well on cheap phones.
+- **Coming next: e-reader sync**, so the page you stopped at on your phone is the page your e-ink device opens on.
+
+It's free. It has no ads, no account, and collects nothing — that isn't a growth tactic I'll reverse later, it's the whole point. If it helps and you want to say thanks, there's a coffee link. Nothing in the app is locked behind it.
+
+### A second launcher, for a different person entirely
+
+I've also been building **MIRA**, a home screen for an ageing parent set up remotely by their adult child: the people they call as large photo tiles, a one-tap call for help, the day and date always visible. The principle is *the family configures, the parent just uses* — including from another city.
+
+It taught me something ReadFirst never could: **the user isn't always the buyer.** ReadFirst is chosen by the person who reads it. MIRA is chosen by a caregiver for someone else. Same craft, completely different job.
+
+### Four things building both taught me
 
 1. **Subtraction is a feature.** Both products are mostly about what isn't on the screen.
 2. **Design for the moment, not the app.** "Unlock" is a moment. Serve it well and the habit follows.
-3. **Small is a strategy.** No libraries meant fast starts on cheap phones, which is exactly where both audiences are.
-4. **The user isn't always the buyer.** ReadFirst is chosen by its reader. MIRA is chosen by a caregiver, and marketing it is a completely different job.
+3. **Small is a strategy.** No libraries meant fast starts on cheap phones — which is exactly where both audiences are.
+4. **Start from an honest problem.** I didn't build a reading app because I love reading. I built it because I couldn't.
 
-### I'm looking for 12 early readers
+### I need 12 people who keep meaning to read more
 
-ReadFirst is entering Google Play testing this week. I need **12 people who want to read more** to use it as their home screen for 14 days and tell me honestly what breaks. Comment "READ" or sign up here: [link]
+ReadFirst is going into Google Play closed testing. Google requires 12 testers for 14 days, so this is a real ask, not a soft launch: use it as your home screen for two weeks and tell me honestly what breaks.
+
+You don't need to be a reader. Frankly, I'd rather you weren't — I want to know if it works for people like me.
+
+Sign up here: [TESTER LINK]
 
 If you look after a parent's phone from another city and want to try MIRA, message me.
 
