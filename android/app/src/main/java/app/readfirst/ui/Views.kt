@@ -43,6 +43,81 @@ class SegmentBar(context: Context, private val p: InkPalette, var fraction: Floa
     }
 }
 
+/**
+ * A small open book with a page sweeping over, looping: a loading indicator for screens that
+ * fetch a catalogue or a book. Flat outlines in the current ink. In black ink ([InkPalette.animate]
+ * false) it draws one still book and never posts a frame, because animation ghosts on e-ink.
+ */
+class PageTurnView(context: Context, private val p: InkPalette, private val sizeDp: Float = 46f) : View(context) {
+    private val d = resources.displayMetrics.density
+    private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = max(1f, 1.5f * d)
+        color = p.text
+    }
+    private val page = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = p.bg }
+    private val path = Path()
+    /** 0..1 through one turn; parked part-way open when still, so the shape still reads as a page. */
+    private var phase = if (p.animate) 0f else 0.34f
+    private val tick = object : Runnable {
+        override fun run() {
+            phase = (phase + 0.045f) % 1f
+            invalidate()
+            postDelayed(this, 40L)
+        }
+    }
+
+    init {
+        contentDescription = "Loading"
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val w = (sizeDp * d).roundToInt()
+        setMeasuredDimension(w, (w * 0.62f).roundToInt())
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (p.animate) postDelayed(tick, 40L)
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(tick)
+        super.onDetachedFromWindow()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val inset = line.strokeWidth
+        val cx = width / 2f
+        val half = cx - inset
+        val top = inset
+        val bottom = height - inset
+        // Outer corners sit lower than the spine, so the two halves read as an open book.
+        val lift = (bottom - top) * 0.22f
+
+        leaf(-half, 1f, cx, top, bottom, lift)
+        canvas.drawPath(path, line)
+        leaf(half, 1f, cx, top, bottom, lift)
+        canvas.drawPath(path, line)
+
+        // The turning leaf swings right to left: its outer edge is the cosine of the phase.
+        val f = kotlin.math.cos(phase * 2 * Math.PI).toFloat()
+        leaf(half * f, abs(f), cx, top, bottom, lift)
+        canvas.drawPath(path, page)
+        canvas.drawPath(path, line)
+    }
+
+    /** One page: spine edge straight, outer edge [dx] from the spine and dropped by [open] * lift. */
+    private fun leaf(dx: Float, open: Float, cx: Float, top: Float, bottom: Float, lift: Float) {
+        path.reset()
+        path.moveTo(cx, top)
+        path.lineTo(cx + dx, top + lift * open)
+        path.lineTo(cx + dx, bottom)
+        path.lineTo(cx, bottom - lift * open)
+        path.close()
+    }
+}
+
 /** Book covers from the cover cache, loaded off the main thread. */
 object Covers {
     private val cache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) {

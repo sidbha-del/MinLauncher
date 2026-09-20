@@ -1,8 +1,11 @@
 package app.readfirst.ui
 
+import android.content.Intent
 import android.net.Uri
 import android.view.Gravity
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.Toast
 import app.readfirst.HomeActivity
@@ -108,6 +111,12 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
 
         list.addView(ui.group("About"))
         list.addView(ui.row("Version", app.readfirst.BuildConfig.VERSION_NAME))
+        list.addView(ui.text("A small home screen that puts your books first.", 13f, p.soft).apply {
+            setLineSpacing(0f, 1.3f)
+        }.also { ui.margins(it, 18, 10, 18, 10) })
+        list.addView(ui.row("GitHub", "Project page") { openLink("https://sidbha-del.github.io/MinLauncher") })
+        list.addView(ui.row("Buy me a coffee", "Say thanks") { openLink("https://www.buymeacoffee.com/rashidua82") })
+        list.addView(ui.row("Suggest a feature", "Email") { suggestSheet() })
 
         val scroll = ScrollView(host).apply { addView(list) }
         // Changing a setting rebuilds the screen; keep the reader where they were.
@@ -122,6 +131,53 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
     private fun openMediaAccessSettings() {
         if (!NowPlaying.get(host).openAccessSettings(host)) {
             Toast.makeText(host, "Open Settings → Notification access to allow ReadFirst", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun openLink(url: String) {
+        if (!app.readfirst.data.PhoneCheck.open(host, Intent(Intent.ACTION_VIEW, Uri.parse(url)))) {
+            Toast.makeText(host, "No browser found on this device", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /** Hands the typed suggestion to the reader's own mail app; ReadFirst never sends it itself. */
+    private fun suggestSheet() {
+        val col = ui.vertical().apply { setPadding(0, 0, 0, ui.dp(16)) }
+        col.addView(ui.mono("Suggest a feature", 11f).also { ui.margins(it, 18, 16, 18, 10) })
+        val field = EditText(host).apply {
+            setTextColor(p.text)
+            textSize = 16f
+            hint = "What would make ReadFirst better?"
+            setHintTextColor(p.soft)
+            minLines = 3
+            gravity = Gravity.TOP or Gravity.START
+            background = ui.box(0)
+            setPadding(ui.dp(12), ui.dp(12), ui.dp(12), ui.dp(12))
+        }
+        col.addView(field)
+        ui.margins(field, 18, 0, 18, 12)
+        val row = ui.horizontal()
+        row.addView(ui.boxButton("Cancel") { host.dismissSheet() }, ui.lp(0, weight = 1f).apply { rightMargin = ui.dp(6) })
+        row.addView(ui.boxButton("Send") {
+            val note = field.text.toString().trim()
+            host.dismissSheet()
+            if (note.isNotEmpty()) sendSuggestion(note)
+        }, ui.lp(0, weight = 1f).apply { leftMargin = ui.dp(6) })
+        col.addView(row)
+        ui.margins(row, 18, 0, 18, 0)
+        host.showSheet(col)
+        // showSheet hides the keyboard as it attaches, so ask for it back afterwards.
+        field.requestFocus()
+        host.getSystemService(InputMethodManager::class.java)?.showSoftInput(field, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun sendSuggestion(note: String) {
+        val body = "$note\n\n—\nReadFirst ${app.readfirst.BuildConfig.VERSION_NAME}\n${android.os.Build.MODEL}"
+        val mail = Intent(Intent.ACTION_SENDTO, Uri.fromParts("mailto", "rashidua82@gmail.com", null))
+            .putExtra(Intent.EXTRA_SUBJECT, "ReadFirst — feature suggestion")
+            .putExtra(Intent.EXTRA_TEXT, body)
+        if (!app.readfirst.data.PhoneCheck.open(host, mail)) {
+            Toast.makeText(host, "No mail app found on this device", Toast.LENGTH_LONG).show()
         }
     }
 
