@@ -12,6 +12,7 @@ import android.os.SystemClock
 import android.provider.Telephony
 import android.telecom.TelecomManager
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.Toast
 import app.readfirst.data.AppCatalog
@@ -244,6 +245,12 @@ class HomeActivity : Activity() {
             root.removeView(sheet)
             sheet = null
         }
+        // A sheet rises into the space the keyboard occupies, so opening one straight from the
+        // app search — searching for YouTube, say, and being offered your book instead — left the
+        // sheet behind the keyboard, with only a dimmed screen to show for it. Sheets that do want
+        // typing, like renaming an app, ask for the keyboard back after this.
+        getSystemService(InputMethodManager::class.java)
+            ?.hideSoftInputFromWindow(window.decorView.windowToken, 0)
         sheet = attachSheet(root, ui, content) { dismissSheet() }
     }
 
