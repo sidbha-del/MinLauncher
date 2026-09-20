@@ -1,3 +1,5 @@
+> **⚠️ SUPERSEDED (2026-09-20).** Same status as `MASTERPLAN.md`: pre-rename, pre-ReadFirst, and most of "User Review Required" (Settings accessibility, starter onboarding, the mindful escape hatch) already shipped differently than described here. Do not point an agent at this file expecting current behavior — it will "fix" working code backwards. Live roadmap: the "Next — agreed order" table in `Book Launcher — PRD.md`.
+
 # Book Launcher: World-Class UI/UX, Habit Formation & Accessibility Masterplan
 
 ## Goal Description

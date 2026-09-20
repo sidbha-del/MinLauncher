@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ReadFirst — Privacy Policy</title>
-  <meta name="description" content="Privacy Policy for ReadFirst: Book Home Screen. No accounts, no ads, no analytics, no personal tracking.">
+  <title>ReadFirst — a home screen that opens on your book</title>
+  <meta name="description" content="ReadFirst replaces your Android home screen with the book you're reading. No ads, no account, no tracking.">
   <style>
     :root {
       --bg: #FAF8F5;
@@ -26,11 +26,7 @@
         --accent: #78A9D6;
       }
     }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: var(--bg);
       color: var(--text);
@@ -43,15 +39,8 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
     }
-    .container {
-      max-width: 680px;
-      width: 100%;
-    }
-    header {
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 1.5rem;
-      margin-bottom: 2rem;
-    }
+    .container { max-width: 680px; width: 100%; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
     .badge {
       display: inline-block;
       font-family: var(--font-sans);
@@ -66,25 +55,9 @@
       color: var(--muted);
       margin-bottom: 0.75rem;
     }
-    h1 {
-      font-size: 2.25rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      margin-bottom: 0.5rem;
-    }
-    .effective-date {
-      font-family: var(--font-sans);
-      font-size: 0.95rem;
-      color: var(--muted);
-    }
-    .intro {
-      font-size: 1.25rem;
-      line-height: 1.6;
-      margin-bottom: 2rem;
-      font-style: italic;
-      color: var(--text);
-    }
+    h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.5rem; }
+    .tagline { font-family: var(--font-sans); font-size: 0.95rem; color: var(--muted); }
+    .intro { font-size: 1.25rem; line-height: 1.6; margin-bottom: 2rem; font-style: italic; color: var(--text); }
     h2 {
       font-family: var(--font-sans);
       font-size: 1.3rem;
@@ -95,25 +68,24 @@
       border-bottom: 1px solid var(--border);
       padding-bottom: 0.4rem;
     }
-    p {
-      margin-bottom: 1.25rem;
-    }
-    ul {
-      margin-bottom: 1.25rem;
-      padding-left: 1.5rem;
-    }
-    li {
-      margin-bottom: 0.75rem;
-    }
-    strong {
+    p { margin-bottom: 1.25rem; }
+    ul { margin-bottom: 1.25rem; padding-left: 1.5rem; }
+    li { margin-bottom: 0.6rem; }
+    strong { font-family: var(--font-sans); font-weight: 600; }
+    a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+    .cta {
+      display: inline-block;
       font-family: var(--font-sans);
       font-weight: 600;
+      font-size: 0.95rem;
+      background: var(--text);
+      color: var(--bg);
+      padding: 0.75rem 1.4rem;
+      border-radius: 6px;
+      text-decoration: none;
+      margin-top: 0.5rem;
     }
-    a {
-      color: var(--accent);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
+    .note { font-family: var(--font-sans); font-size: 0.9rem; color: var(--muted); margin-top: 0.75rem; }
     footer {
       margin-top: 3.5rem;
       padding-top: 1.5rem;
@@ -133,61 +105,51 @@
   <div class="container">
     <header>
       <div class="badge">ReadFirst: Book Home Screen</div>
-      <h1>Privacy Policy</h1>
-      <div class="effective-date">Effective Date: September 19, 2026</div>
+      <h1>Your home screen opens on the page you stopped at.</h1>
+      <div class="tagline">A calm Android home screen that puts reading first</div>
     </header>
 
     <main>
       <p class="intro">
-        ReadFirst is a home-screen app for reading. It has no accounts, no ads and no analytics, and the developer receives no data from your use of it.
+        ReadFirst replaces your home screen with the book you're reading: the last few lines, your progress, and one tap to continue. Your apps are still there, one swipe up. They just aren't the first thing you see.
       </p>
 
-      <h2>What stays on your phone</h2>
-      <p>
-        Your books, your reading positions, your settings, your library and any catalog passwords you enter are stored only in the app's private storage on your device. Uninstalling the app deletes them. Books in folders you chose are never modified or deleted.
-      </p>
-
-      <h2>When the app uses the internet</h2>
-      <p>Only when you use these features:</p>
+      <h2>Reading, built in</h2>
       <ul>
-        <li>
-          <strong>Free catalogs (Project Gutenberg, Standard Ebooks, catalogs you add):</strong> The app requests catalog pages and downloads the books you choose from those services. If you sign in to a catalog, your username and password are sent only to that catalog.
-        </li>
-        <li>
-          <strong>Covers and details online (on by default, can be switched off in Settings):</strong> For books missing a cover or author, the book's title (and author, if known) is sent to Open Library (<a href="https://openlibrary.org" target="_blank" rel="noopener">openlibrary.org</a>) to look them up. Nothing else about you or your books is sent.
-        </li>
-      </ul>
-      <p>These services have their own privacy policies.</p>
-
-      <h2>Permissions</h2>
-      <ul>
-        <li>
-          <strong>Notification access (optional, off until you allow it):</strong> Used only to show what an audiobook app is currently playing, with play and skip controls. ReadFirst does not read, store or send the content of your notifications.
-        </li>
-        <li>
-          <strong>Usage access (optional, off until you allow it):</strong> Used only to show on your home screen how today's phone time splits into reading, work and scrolling. It is calculated on your phone and never sent anywhere.
-        </li>
-        <li>
-          <strong>Installed apps:</strong> As a home screen, the app lists your apps to show and open them. The list never leaves your phone.
-        </li>
-        <li>
-          <strong>Files and folders:</strong> Only the folders and files you choose through Android's file picker.
-        </li>
+        <li>EPUB, PDF and plain-text books, with no other reader app needed</li>
+        <li>Text size, serif or sans, margins, and a page that remembers exactly where you were</li>
+        <li>PDFs trim their blank margins so text is bigger on a small screen, and follow your page colour at night</li>
       </ul>
 
-      <h2>Children</h2>
-      <p>The app is not directed at children under 13.</p>
+      <h2>A home screen that feels like paper</h2>
+      <ul>
+        <li>Color ink, or Black ink: pure black on white with no animation, made for e-ink devices</li>
+        <li>Page colours (White, Paper, Sepia, Mist, Night) and subtle textures</li>
+        <li>Your library as a shelf of spines, or a stack with full titles</li>
+      </ul>
 
-      <h2>Contact</h2>
+      <h2>Free books in one tap</h2>
+      <ul>
+        <li>Start with a classic: Meditations, Sherlock Holmes, Pride and Prejudice, Gitanjali</li>
+        <li>Browse and search Project Gutenberg's 75,000+ free books</li>
+        <li>Connect your own Calibre, Kavita or other OPDS library</li>
+      </ul>
+
+      <h2>Light and private</h2>
+      <ul>
+        <li>Under 200 KB. No ads, no account, no tracking</li>
+        <li>Your books stay on your device — see the <a href="privacy-policy.html">privacy policy</a></li>
+      </ul>
+
       <p>
-        If you have questions or concerns about this privacy policy, contact: 
-        <a href="mailto:rashidua82@gmail.com">rashidua82@gmail.com</a>
+        <span class="cta">Coming soon to Google Play</span>
+        <span class="note">In closed testing now — get in touch if you'd like to be one of the first testers.</span>
       </p>
     </main>
 
     <footer>
       <span>ReadFirst for Android</span>
-      <span>Published via GitHub Pages</span>
+      <span><a href="privacy-policy.html">Privacy Policy</a></span>
     </footer>
   </div>
 </body>

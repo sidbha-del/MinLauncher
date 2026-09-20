@@ -1,3 +1,5 @@
+> **⚠️ SUPERSEDED (2026-09-20).** Written before the app was renamed to ReadFirst (still says "Book Launcher" / `app.booklauncher` throughout) and before most of §2–6 shipped. Several proposals here now describe already-built behavior incorrectly — e.g. §2 says swipe-down should open Settings; the shipped app binds swipe-down to expanding notifications, with Settings reachable via long-press instead. **Do not use this file as a build spec.** The live roadmap is the "Next — agreed order" table in `Book Launcher — PRD.md`. Kept for its still-unbuilt ideas (highlighting, dictionary, quote cards, reading velocity) as backlog inspiration only.
+
 # Book Launcher: Masterplan & Commercialization Roadmap
 ### Version 2.0 · From Minimalist Prototype to Viral Phenomenon
 
