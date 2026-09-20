@@ -1,0 +1,57 @@
+================================================================================
+ReadFirst (Book Launcher) - Session Summary for Claude
+Date: September 20, 2026
+Repository: https://github.com/sidbha-del/MinLauncher.git (Branch: main)
+================================================================================
+
+1. PRIVACY POLICY HOSTED VIA GITHUB PAGES
+--------------------------------------------------------------------------------
+- Configured official developer support email: rashidua82@gmail.com
+- Created standalone, responsive, dark-mode-ready static web pages in:
+    * docs/index.html
+    * docs/privacy-policy.html
+    * docs/.nojekyll (bypasses Jekyll for instantaneous static serving)
+- Live URL for Google Play Console submission:
+    https://sidbha-del.github.io/MinLauncher/
+- Updated store/privacy-policy.md and store/listing.md with the support email 
+  and canonical URL.
+- Updated PLAYSTORE_CHECKLIST.md (Tasks 1.4 Support Email & 3.1 Privacy Policy URL 
+  marked as DONE).
+
+2. PLAY STORE BRANDING ASSETS GENERATED & FORMATTED
+--------------------------------------------------------------------------------
+- Explored 5 distinct icon directions and 2 feature graphic styles.
+- Selected Option 2 v1 (Split Book & Modern Android Phone with color ink,
+  terracotta bookmark ribbon, and modern centered punch-hole camera).
+- Generated and formatted production-ready files meeting exact Google Play specs:
+    * App Icon: store/assets/playstore_icon_512x512.png
+      (512x512 PNG, 350 KB, 32-bit color, no alpha, <1024 KB Play Store limit)
+    * Feature Graphic: store/assets/playstore_feature_graphic_1024x500.png
+      (1024x500 PNG, 1.2 MB, morning reading desk concept, <15 MB limit)
+- Updated PLAYSTORE_CHECKLIST.md (Tasks 4.1 App Icon & 4.2 Feature Graphic 
+  marked as DONE).
+
+3. REPOSITORY & VERSION CONTROL STATE
+--------------------------------------------------------------------------------
+- All documentation, assets, and checklist updates committed and pushed:
+    * Commit 5d4e7a1: "Publish privacy policy via GitHub Pages and set support email"
+    * Commit da16ac1: "Add official Play Store 512x512 icon and 1024x500 feature graphic"
+    * Remote branch: origin/main (up to date)
+- Added *.zip to .gitignore to keep local device bug reports out of git.
+- Working tree is 100% clean.
+
+4. PRODUCT ARCHITECTURE & ROADMAP CONSOLIDATION
+--------------------------------------------------------------------------------
+- Full masterplan saved at MASTERPLAN.md (and CLAUDE_UI_UX_MASTERPLAN.md):
+    * P0 UX Fix: 4-Way Universal Settings Access (Swipe down on Home, long press, 
+      status bar touchpoint, and Library top bar icon).
+    * TXT format already has 100% EPUB parity via TextBook.kt and FlowEngine.kt.
+    * PDF Comfort Suite: Hardware ColorMatrixColorFilter for true Night Mode 
+      inversion (255 - RGB), Sepia tint, Fit-Width zoom, and margin cropping.
+    * Highlighting & In-App Dictionary: Character-offset indexing 
+      (chapterIndex, startOffset, endOffset) with watercolor wash for Color Ink 
+      and 1.5dp underline for Black E-ink; hybrid Wiktionary + ACTION_PROCESS_TEXT.
+    * Growth & Monetization: 9:16 aesthetic quote cards for viral loops; 
+      ethical $4.99 one-time Pro Supporter Tier (custom fonts, KOReader sync, 
+      reading heatmaps). Zero ads.
+================================================================================
