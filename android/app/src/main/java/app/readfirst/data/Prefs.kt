@@ -22,6 +22,11 @@ enum class Page(val label: String, val color: Int, val dark: Boolean) {
 
 enum class Texture(val label: String) { NONE("None"), GRAIN("Grain"), LINEN("Linen") }
 
+/** How books are ordered within each shelf. RECENT is the reading order: most recently touched first. */
+enum class LibrarySort(val label: String) {
+    RECENT("Recent"), TITLE("Title"), AUTHOR("Author"), SUBJECT("Subject")
+}
+
 /** A page colour plus texture; the launcher has one, and books either share it or have their own. */
 data class PageStyle(val page: Page, val texture: Texture)
 
@@ -81,8 +86,12 @@ class Prefs private constructor(context: Context) {
 
     /** Library layout: false = spines on shelves, true = books stacked flat (full titles). */
     var libraryStack: Boolean
-        get() = sp.getBoolean("library_stack", false)
+        get() = sp.getBoolean("library_stack", true)
         set(v) = edit { putBoolean("library_stack", v) }
+
+    var librarySort: LibrarySort
+        get() = enumOr("library_sort", LibrarySort.RECENT)
+        set(v) = edit { putString("library_sort", v.name) }
 
     /** Now listening: false = audiobook apps only, true = any audio (music, podcasts). */
     var nowPlayingAllAudio: Boolean

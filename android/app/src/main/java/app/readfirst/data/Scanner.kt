@@ -122,6 +122,8 @@ object Scanner {
                         title = meta.title.ifBlank { entry.title },
                         author = meta.author,
                         pagesEstimate = Epub.estimatePages(meta.textBytes),
+                        // A catalog download already carries the entry's categories; keep those if the file has none.
+                        subjects = meta.subjects.ifEmpty { result.subjects },
                     )
                     meta.coverPath?.let { path ->
                         val bytes = cr.openInputStream(uri)?.use { Epub.readEntry(it, path) }

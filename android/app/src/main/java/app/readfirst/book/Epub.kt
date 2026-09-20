@@ -17,7 +17,13 @@ import javax.xml.parsers.SAXParserFactory
 object Epub {
 
     /** [textBytes] is the size of the reading-order documents, a rough measure of the book's length. */
-    data class Meta(val title: String, val author: String, val coverPath: String?, val textBytes: Long = 0)
+    data class Meta(
+        val title: String,
+        val author: String,
+        val coverPath: String?,
+        val textBytes: Long = 0,
+        val subjects: List<String> = emptyList(),
+    )
 
     class Package(
         val title: String,
@@ -27,6 +33,8 @@ object Epub {
         val spine: List<String>,
         /** Full zip path (no fragment) to table-of-contents label. */
         val tocTitles: Map<String, String>,
+        /** dc:subject values from the package metadata. */
+        val subjects: List<String> = emptyList(),
     )
 
     private const val MAX_ENTRY_BYTES = 6 * 1024 * 1024
@@ -57,7 +65,7 @@ object Epub {
     }
 
     fun meta(entries: Map<String, ByteArray>): Meta? = parsePackage(entries)?.let { pkg ->
-        Meta(pkg.title, pkg.author, pkg.coverPath, pkg.spine.sumOf { (lookup(entries, it)?.size ?: 0).toLong() })
+        Meta(pkg.title, pkg.author, pkg.coverPath, pkg.spine.sumOf { (lookup(entries, it)?.size ?: 0).toLong() }, pkg.subjects)
     }
 
     /** Approximate printed pages: markup is roughly half of XHTML, and a page holds ~1,500 characters. */
@@ -89,6 +97,7 @@ object Epub {
 
         val title = opf.find("title")?.text()?.trim().orEmpty()
         val author = opf.findAll("creator").map { it.text().trim() }.filter { it.isNotEmpty() }.distinct().joinToString(", ")
+        val subjects = opf.findAll("subject").map { it.text().trim() }.filter { it.isNotEmpty() }.distinct()
 
         data class Item(val id: String, val path: String, val mediaType: String, val properties: String)
         val items = opf.findAll("item").map {
@@ -130,7 +139,7 @@ object Epub {
                 }
             }
         }
-        return Package(title, author, cover?.path, spine, toc)
+        return Package(title, author, cover?.path, spine, toc, subjects)
     }
 
     /** Resolves an OPF/NCX-relative href to a full zip path, without fragment or query. */

@@ -17,6 +17,8 @@ object Opds {
         val authors: List<String>,
         val summary: String,
         val links: List<Link>,
+        /** Atom <category> labels, used as the book's subjects. */
+        val categories: List<String> = emptyList(),
     ) {
         /** Downloadable files, best first (see [rank]); unsupported formats are dropped. */
         val downloads: List<Link> get() = links.filter { it.rel.startsWith(ACQUISITION) && rank(it) > 0 }.sortedByDescending { rank(it) }
@@ -74,6 +76,9 @@ object Opds {
                 authors = e.children.filter { it.name == "author" }.mapNotNull { a -> a.find("name")?.text()?.trim()?.takeIf { it.isNotEmpty() }?.let(::displayName) },
                 summary = if (summary.length > 700) summary.take(700).substringBeforeLast(' ') + "…" else summary,
                 links = e.children.filter { it.name == "link" }.map { link(it, baseUrl) },
+                categories = e.children.filter { it.name == "category" }
+                    .map { c -> c.attr("label").ifBlank { c.attr("term") }.trim() }
+                    .filter { it.isNotEmpty() }.distinct(),
             )
         }
         val search = feedLinks.firstOrNull { it.rel == "search" && it.type.contains("atom") && it.href.contains("{searchTerms}") }

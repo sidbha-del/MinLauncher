@@ -48,7 +48,12 @@ data class BookEntry(
     val olKey: String = "",
     /** Catalog download URL for books fetched from an OPDS catalog, else empty. */
     val sourceUrl: String = "",
+    /** Subjects from the book's own metadata or its catalog entry; empty when unknown. */
+    val subjects: List<String> = emptyList(),
 )
+
+/** The heading a book files under when the library is sorted by subject. */
+val BookEntry.subjectGroup: String get() = subjects.firstOrNull() ?: "Unsorted"
 
 /**
  * The book list, persisted as one JSON file. All mutation happens on the main thread; disk
@@ -78,11 +83,20 @@ class Library private constructor(context: Context) {
         books.filter { it.shelf == Shelf.READING && it.openedAt > 0 }.maxByOrNull { it.openedAt }
             ?: books.filter { it.shelf != Shelf.FINISHED }.maxByOrNull { maxOf(it.openedAt, it.addedAt) }
 
-    fun onShelf(shelf: Shelf): List<BookEntry> = books.filter { it.shelf == shelf }.let { list ->
-        when (shelf) {
-            Shelf.READING -> list.sortedByDescending { it.openedAt }
-            Shelf.TO_READ -> list.sortedByDescending { it.addedAt }
-            Shelf.FINISHED -> list.sortedByDescending { it.openedAt }
+    fun onShelf(shelf: Shelf, sort: LibrarySort = LibrarySort.RECENT): List<BookEntry> = books.filter { it.shelf == shelf }.let { list ->
+        when (sort) {
+            LibrarySort.RECENT -> when (shelf) {
+                Shelf.READING -> list.sortedByDescending { it.openedAt }
+                Shelf.TO_READ -> list.sortedByDescending { it.addedAt }
+                Shelf.FINISHED -> list.sortedByDescending { it.openedAt }
+            }
+            LibrarySort.TITLE -> list.sortedBy { it.title.lowercase() }
+            LibrarySort.AUTHOR -> list.sortedBy { it.author.lowercase() }
+            LibrarySort.SUBJECT -> list.sortedWith(
+                compareBy<BookEntry> { it.subjects.isEmpty() }
+                    .thenBy { it.subjects.firstOrNull()?.lowercase() ?: "" }
+                    .thenBy { it.title.lowercase() }
+            )
         }
     }
 
@@ -195,6 +209,7 @@ class Library private constructor(context: Context) {
         put("metaDone", b.metaDone); put("hasCover", b.hasCover); put("spineColor", b.spineColor)
         put("pagesEstimate", b.pagesEstimate)
         put("fileTitle", b.fileTitle); put("olChecked", b.olChecked); put("olKey", b.olKey); put("sourceUrl", b.sourceUrl)
+        put("subjects", JSONArray(b.subjects))
     }
 
     private fun fromJson(o: JSONObject): BookEntry? {
@@ -226,6 +241,7 @@ class Library private constructor(context: Context) {
             olChecked = o.optBoolean("olChecked"),
             olKey = o.optString("olKey"),
             sourceUrl = o.optString("sourceUrl"),
+            subjects = o.optJSONArray("subjects")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
         )
     }
 

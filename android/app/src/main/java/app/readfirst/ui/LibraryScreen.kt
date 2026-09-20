@@ -4,7 +4,9 @@ import android.view.Gravity
 import android.view.View
 import android.widget.ScrollView
 import app.readfirst.HomeActivity
+import app.readfirst.data.LibrarySort
 import app.readfirst.data.Shelf
+import app.readfirst.data.subjectGroup
 
 /** The library as shelves: Reading, To read, Finished. Tap a spine to read, long-press for actions. */
 class LibraryScreen(host: HomeActivity) : Screen(host) {
@@ -15,9 +17,13 @@ class LibraryScreen(host: HomeActivity) : Screen(host) {
         val col = ui.vertical()
         val count = lib.books.size
         val stack = host.prefs.libraryStack
+        val sort = host.prefs.librarySort
         col.addView(ui.topBar("Library", "", onRight = { host.push(SettingsScreen(host)) },
             rightIcon = app.readfirst.R.drawable.ic_settings, rightIconLabel = "Settings"))
-        if (count > 0) col.addView(viewSwitch(count, stack))
+        if (count > 0) {
+            col.addView(viewSwitch(count, stack))
+            col.addView(ui.row("Sort", sort.label) { sortSheet() })
+        }
 
         val content = ui.vertical().apply { setPadding(0, 0, 0, ui.dp(16)) }
         if (count == 0) {
@@ -28,10 +34,17 @@ class LibraryScreen(host: HomeActivity) : Screen(host) {
         }
         val current = lib.current()?.id
         for ((shelf, label) in listOf(Shelf.READING to "Reading", Shelf.TO_READ to "To read", Shelf.FINISHED to "Finished")) {
-            val books = lib.onShelf(shelf)
+            val books = lib.onShelf(shelf, sort)
             if (books.isEmpty()) continue
             content.addView(ui.mono("$label · ${books.size}", 11f).also { ui.margins(it, 18, 22, 18, 8) })
-            content.addView(if (stack) stackOf(books, current) else shelfOf(books, current))
+            if (sort == LibrarySort.SUBJECT) {
+                for ((subject, group) in books.groupBy { it.subjectGroup }) {
+                    content.addView(ui.mono(subject, 10f).also { ui.margins(it, 18, 10, 18, 6) })
+                    content.addView(if (stack) stackOf(group, current) else shelfOf(group, current))
+                }
+            } else {
+                content.addView(if (stack) stackOf(books, current) else shelfOf(books, current))
+            }
         }
         otherReadingApps()?.let { content.addView(it) }
         col.addView(ScrollView(host).apply { addView(content) }, ui.lp(h = 0, weight = 1f))
@@ -69,19 +82,13 @@ class LibraryScreen(host: HomeActivity) : Screen(host) {
         return col
     }
 
-    /** Book count on the left, SHELF | STACK on the right. */
+    /** Book count on the left, SHELF | STACK then the filled + ADD on the right. */
     private fun viewSwitch(count: Int, stack: Boolean): View {
         val row = ui.horizontal().apply {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(ui.dp(18), ui.dp(10), ui.dp(18), ui.dp(10))
         }
         row.addView(ui.mono(if (count == 1) "1 book" else "$count books", 11f), ui.lp(0, weight = 1f))
-        row.addView(ui.mono("+ Add", 10.5f, p.text).apply {
-            gravity = Gravity.CENTER
-            setPadding(ui.dp(12), ui.dp(7), ui.dp(12), ui.dp(7))
-            background = ui.box(0)
-            setOnClickListener { AddBooks.show(host) }
-        }, ui.lp(android.widget.LinearLayout.LayoutParams.WRAP_CONTENT))
         for ((label, on) in listOf("Shelf" to !stack, "Stack" to stack)) {
             val chip = ui.mono(label, 10.5f, if (on) p.bg else p.text).apply {
                 gravity = Gravity.CENTER
@@ -91,10 +98,30 @@ class LibraryScreen(host: HomeActivity) : Screen(host) {
             }
             row.addView(chip, ui.lp(android.widget.LinearLayout.LayoutParams.WRAP_CONTENT).apply { leftMargin = ui.dp(8) })
         }
+        row.addView(ui.mono("+ Add", 10.5f, p.bg).apply {
+            gravity = Gravity.CENTER
+            setPadding(ui.dp(12), ui.dp(7), ui.dp(12), ui.dp(7))
+            background = ui.box(p.text)
+            setOnClickListener { AddBooks.show(host) }
+        }, ui.lp(android.widget.LinearLayout.LayoutParams.WRAP_CONTENT).apply { leftMargin = ui.dp(8) })
         return ui.vertical().apply {
             addView(row)
             addView(ui.rule(soft = true))
         }
+    }
+
+    private fun sortSheet() {
+        val col = ui.vertical()
+        col.addView(ui.mono("Sort books", 11f).also { ui.margins(it, 18, 16, 18, 8) })
+        col.addView(ui.rule())
+        val chosen = host.prefs.librarySort
+        for (option in LibrarySort.values()) {
+            col.addView(ui.row(option.label, if (option == chosen) "✓" else null) {
+                host.prefs.librarySort = option
+                host.dismissSheet()
+            })
+        }
+        host.showSheet(col)
     }
 
     private fun shelfOf(books: List<app.readfirst.data.BookEntry>, current: String?): View {
