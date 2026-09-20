@@ -2,6 +2,7 @@ package app.readfirst.reader
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -116,6 +117,16 @@ class ReaderActivity : Activity() {
         if (hasFocus) immersive()
     }
 
+    /**
+     * Rotating or resizing the window doesn't restart the activity (see configChanges in the
+     * manifest), so re-fit the page to the width the window is now. Re-measuring the page view
+     * triggers the layout listener in [showFlow], which reflows the text at the new size.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        root.getChildAt(0)?.layoutParams = ui.rootParams()
+    }
+
     // ---- layout -------------------------------------------------------------------------------
 
     private fun buildChrome() {
@@ -140,7 +151,7 @@ class ReaderActivity : Activity() {
         foot.addView(footLeft, ui.lp(0, weight = 1f))
         foot.addView(footRight, ui.lp().apply { width = LinearLayout.LayoutParams.WRAP_CONTENT; leftMargin = ui.dp(12) })
         col.addView(foot)
-        root.addView(col)
+        root.addView(col, ui.rootParams())
         footLeft.text = entry.title.uppercase()
     }
 

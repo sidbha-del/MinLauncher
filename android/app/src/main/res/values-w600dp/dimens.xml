@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Tablets, landscape phones and large split-screen windows. Text stretched across a whole
+      tablet is a long, tiring line to read, so the content keeps a book-like measure and sits in
+      the middle, with the page colour showing either side.
+
+      To tune the reading measure for an even larger class of device, add another qualifier folder
+      (values-w840dp, say) rather than changing code.
+    -->
+    <dimen name="content_max_width">600dp</dimen>
+</resources>

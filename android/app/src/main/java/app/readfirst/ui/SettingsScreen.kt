@@ -62,9 +62,9 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
         })
         val usage = app.readfirst.data.Focus.hasUsageAccess(host)
         list.addView(ui.row("Compare reading with scrolling", if (usage) "On" else "Allow access") { TimeStats.openUsageAccess(host) })
-        list.addView(ui.row("Today's phone time") { TimeStats.sheet(host) })
+        list.addView(ui.row("Today's screen time") { TimeStats.sheet(host) })
 
-        list.addView(ui.group("Phone check"))
+        list.addView(ui.group("Device check"))
         val checks = app.readfirst.data.PhoneCheck.run(host)
         if (checks.isEmpty()) {
             list.addView(ui.row("Everything looks good", "✓"))
@@ -76,7 +76,7 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
             })
         }
         if (checks.isNotEmpty()) list.addView(ui.text(
-            "Phones from some brands stop apps to save battery. These settings keep Home instant and Now listening on.",
+            "Some brands stop apps to save battery. These settings keep Home instant and Now listening on.",
             12.5f, p.soft,
         ).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 8, 18, 4) })
 
@@ -188,7 +188,7 @@ class SetupScreen(host: HomeActivity) : Screen(host) {
         val prefs = host.prefs
         val col = ui.vertical()
         col.addView(ui.topBar("ReadFirst", "", "Setup"))
-        col.addView(ui.serif("A phone that opens on your book.", 26f, bold = true).also { ui.margins(it, 18, 28, 18, 8) })
+        col.addView(ui.serif("A home screen that opens on your book.", 26f, bold = true).also { ui.margins(it, 18, 28, 18, 8) })
         col.addView(ui.text("Three quick steps. You can change any of them later in Settings.", 15f, p.soft).apply {
             setLineSpacing(0f, 1.3f)
         }.also { ui.margins(it, 18, 0, 18, 20) })
@@ -197,6 +197,10 @@ class SetupScreen(host: HomeActivity) : Screen(host) {
         val isHome = HomeRole.isDefault(host)
         val hasBooks = host.library.books.isNotEmpty() || host.library.folders.isNotEmpty()
         col.addView(step("1", isHome, "Make this your home screen", "Android asks once. Easy to undo.") { HomeRole.requestDefault(host) })
+        col.addView(ui.mono(commsReachabilityNote(), 10.5f, p.soft).apply {
+            setPadding(ui.dp(56), ui.dp(2), ui.dp(18), ui.dp(12))
+            setLineSpacing(0f, 1.2f)
+        })
         if (!isHome) col.addView(ui.mono("Not ready to switch? Add the widget instead →", 10.5f, p.text).apply {
             setPadding(ui.dp(56), ui.dp(2), ui.dp(18), ui.dp(12))
             ui.tappable(this, {
@@ -220,6 +224,16 @@ class SetupScreen(host: HomeActivity) : Screen(host) {
             isFillViewport = true
             addView(col)
         }
+    }
+
+    /**
+     * Reassurance that switching home screens doesn't cut anyone off. Names the apps actually
+     * pinned rather than assuming a dialer and a messaging app exist: a Wi-Fi tablet has neither.
+     */
+    private fun commsReachabilityNote(): String {
+        val names = host.prefs.pinned.mapNotNull { key -> host.catalog.apps.firstOrNull { it.key == key }?.label }
+        return if (names.isEmpty()) "Every app is one swipe up from Home."
+        else "${names.joinToString(" and ")} — pinned to Home. Every other app is one swipe up."
     }
 
     private fun step(n: String, done: Boolean, title: String, sub: String, onClick: (() -> Unit)?): View {

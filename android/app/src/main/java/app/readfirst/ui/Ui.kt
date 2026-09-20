@@ -13,8 +13,10 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import app.readfirst.R
 import app.readfirst.data.Ink
 import app.readfirst.data.Page
 import app.readfirst.data.PageStyle
@@ -109,6 +111,26 @@ class Ui(val context: Context, val p: InkPalette) {
     val density = context.resources.displayMetrics.density
 
     fun dp(v: Number): Int = (v.toFloat() * density).roundToInt()
+
+    /**
+     * How a screen's content sits in the window: full width on a phone, and on anything wider a
+     * centred column of `R.dimen.content_max_width`, with the page colour behind it showing either
+     * side. The width comes from resources so the breakpoint is the platform's own (see
+     * values-w600dp), and it is re-read on every call, so an activity that hands these out again
+     * after a rotation or a split-screen resize gets the size the window is now.
+     *
+     * Never wider than the window: a cap that exceeds the current width falls back to filling it,
+     * otherwise the content would be centred past both edges and clipped.
+     */
+    fun rootParams(): FrameLayout.LayoutParams {
+        val cap = context.resources.getDimensionPixelSize(R.dimen.content_max_width)
+        val available = dp(context.resources.configuration.screenWidthDp)
+        return if (cap in 1 until available) {
+            FrameLayout.LayoutParams(cap, FrameLayout.LayoutParams.MATCH_PARENT, Gravity.CENTER_HORIZONTAL)
+        } else {
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        }
+    }
 
     fun text(value: CharSequence, sizeSp: Float, color: Int = p.text, face: Typeface = Fonts.sans): TextView =
         TextView(context).apply {

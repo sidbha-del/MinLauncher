@@ -44,7 +44,7 @@ object PhoneCheck {
 
         if (!HomeRole.isDefault(context)) out += Item(
             "home", Level.PROBLEM, "ReadFirst isn't your home screen",
-            "Some phones reset this after an update. Pressing Home goes to the old screen until you set it again.",
+            "Some devices reset this after an update. Pressing Home goes to the old screen until you set it again.",
         ) { HomeRole.requestDefault(it as android.app.Activity); true }
 
         val am = context.getSystemService(ActivityManager::class.java)
@@ -67,8 +67,8 @@ object PhoneCheck {
             // Brands often unbind listeners silently; asking to rebind usually fixes it at once.
             runCatching { NotificationListenerService.requestRebind(ComponentName(context, MediaAccessService::class.java)) }
             out += Item(
-                "listener", Level.RECOMMENDED, "Now listening was switched off by the phone",
-                "Your phone stopped the connection that shows what's playing. Allowing unrestricted battery use keeps it on.",
+                "listener", Level.RECOMMENDED, "Now listening was switched off by the device",
+                "Your device stopped the connection that shows what's playing. Allowing unrestricted battery use keeps it on.",
             ) { open(it, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS), appDetails(it)) }
         }
 

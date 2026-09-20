@@ -5,9 +5,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
+import android.provider.Telephony
+import android.telecom.TelecomManager
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
@@ -76,7 +79,10 @@ class HomeActivity : Activity() {
         applyEdgeToEdgeInsets(root)
         paintWindow()
         stack.addLast(HomeScreen(this))
-        if (!prefs.setupDone) stack.addLast(SetupScreen(this))
+        if (!prefs.setupDone) {
+            pinDefaultCommsApps()
+            stack.addLast(SetupScreen(this))
+        }
         render(animate = false)
         handleWidgetAction(intent)
 
@@ -103,6 +109,32 @@ class HomeActivity : Activity() {
         unregisterReceiver(packageReceiver)
         stack.forEach { it.onHide() }
         super.onDestroy()
+    }
+
+    /**
+     * Switching the home screen away from the phone's stock launcher raises one real worry: "how do
+     * I still make a call or read a text?" Answer it by pinning the phone's actual dialer and
+     * messaging apps to Home before the user has discovered "Pin to home" themselves — not just
+     * leaving them reachable via the app drawer.
+     */
+    private fun pinDefaultCommsApps() {
+        if (prefs.pinned.isNotEmpty()) return
+        val dialerPkg = runCatching { getSystemService(TelecomManager::class.java)?.defaultDialerPackage }.getOrNull()
+        val smsPkg = runCatching { Telephony.Sms.getDefaultSmsPackage(this) }.getOrNull()
+        val keys = listOfNotNull(dialerPkg, smsPkg).distinct()
+            .mapNotNull { pkg -> catalog.apps.firstOrNull { it.component.packageName == pkg }?.key }
+        if (keys.isNotEmpty()) prefs.pinned = keys
+    }
+
+    /**
+     * The window can change size without the activity restarting: a rotation, a split-screen
+     * divider being dragged, a desktop-mode window. The manifest opts into handling those itself
+     * (configChanges), so nothing re-reads the layout unless we do it here — and content measured
+     * for the old window would otherwise stay that size and be clipped by the new one.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        root.getChildAt(0)?.layoutParams = ui.rootParams()
     }
 
     private var listeningKey: String? = null
@@ -186,7 +218,7 @@ class HomeActivity : Activity() {
         val screen = stack.lastOrNull() ?: return
         val view = screen.build()
         root.removeAllViews()
-        root.addView(view, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        root.addView(view, ui.rootParams())
         sheet = null
         if (animate && ui.p.animate) {
             view.alpha = 0f

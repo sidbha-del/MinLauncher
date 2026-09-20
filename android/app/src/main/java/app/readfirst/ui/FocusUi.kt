@@ -215,7 +215,7 @@ object TimeStats {
         val legend = ui.mono("", 10f, p.text)
         col.addView(legend, ui.lp().apply { topMargin = ui.dp(6) })
         ui.tappable(col, { sheet(host) })
-        col.contentDescription = "Today's phone time. Tap for details."
+        col.contentDescription = "Today's screen time. Tap for details."
         Focus.day(host, 0) { d ->
             bar.day = d
             legend.text = (if (d.hasUsage) {
@@ -223,7 +223,7 @@ object TimeStats {
             } else {
                 "Read ${Focus.format(d.readingMs)} · Tap to compare with scrolling"
             }).uppercase()
-            total.text = if (d.hasUsage) "${Focus.format(d.totalMs)} on phone".uppercase() else ""
+            total.text = if (d.hasUsage) "${Focus.format(d.totalMs)} on device".uppercase() else ""
             bar.visibility = if (d.hasUsage) View.VISIBLE else View.GONE
         }
         return ui.vertical().apply {
@@ -236,11 +236,11 @@ object TimeStats {
         val ui = host.ui
         val p = ui.p
         val col = ui.vertical().apply { setPadding(0, 0, 0, ui.dp(12)) }
-        col.addView(ui.mono("Your phone time", 11f).also { ui.margins(it, 18, 16, 18, 8) })
+        col.addView(ui.mono("Your screen time", 11f).also { ui.margins(it, 18, 16, 18, 8) })
         col.addView(ui.rule())
         if (!Focus.hasUsageAccess(host)) {
             col.addView(ui.text(
-                "Allow usage access to compare reading with work and scrolling apps. It stays on your phone; nothing is sent anywhere.",
+                "Allow usage access to compare reading with work and scrolling apps. It stays on your device; nothing is sent anywhere.",
                 14f, p.soft,
             ).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 14, 18, 12) })
             col.addView(ui.boxButton("Allow usage access") { openUsageAccess(host) }.also { ui.margins(it, 18, 0, 18, 8) })

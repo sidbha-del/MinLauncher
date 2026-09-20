@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The widest the content column is allowed to get. 0 means "no cap": on a phone-width window
+      the content uses the whole width, as it always has. Wider windows override this in
+      values-w600dp. The w<N>dp qualifier tracks the width of the window the app is actually in,
+      not the size of the display, so a split-screen or DeX window picks the right value too.
+    -->
+    <dimen name="content_max_width">0dp</dimen>
+</resources>
