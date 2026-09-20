@@ -1,5 +1,7 @@
 package app.readfirst.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.text.InputType
 import android.text.TextUtils
 import android.view.Gravity
@@ -18,6 +20,7 @@ import app.readfirst.data.Catalog
 import app.readfirst.data.Catalogs
 import app.readfirst.data.Library
 import app.readfirst.data.Net
+import app.readfirst.data.PhoneCheck
 
 /** The list of free catalogs (OPDS): built-ins plus the user's own servers. */
 class CatalogsScreen(host: HomeActivity) : Screen(host) {
@@ -32,46 +35,41 @@ class CatalogsScreen(host: HomeActivity) : Screen(host) {
             }
             val names = ui.vertical()
             names.addView(ui.serif(c.name, 17f, bold = true))
-            val note = if (c.needsSignIn && c.user.isBlank()) c.note else if (c.user.isNotBlank()) "Signed in as ${c.user}" else c.note
+            val note = if (c.user.isNotBlank()) "Signed in as ${c.user}" else c.note
             names.addView(ui.text(note, 13f, p.soft).also { ui.margins(it, t = 3) })
             row.addView(names, ui.lp(0, weight = 1f))
             row.addView(ui.mono("→", 14f, p.text))
-            ui.tappable(row, {
-                if (c.needsSignIn && c.user.isBlank()) signIn(host, c) else host.push(FeedScreen(host, c, c.url, c.name))
-            }, { if (c.builtIn) signIn(host, c) else editCatalog(host, c) })
+            ui.tappable(row, { host.push(FeedScreen(host, c, c.url, c.name)) }, { if (!c.builtIn) editCatalog(host, c) })
             list.addView(row)
             list.addView(ui.rule(soft = true))
         }
         list.addView(ui.text(
-            "Free and public-domain books. Add your own Calibre, Kavita or other OPDS server with + Add. Long-press a catalog to edit or sign in.",
+            "Free and public-domain books. Add your own Calibre, Kavita or other OPDS server with + Add. Long-press one of your own catalogues to edit it.",
             13f, p.soft,
         ).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 16, 18, 16) })
+        list.addView(moreLibraries())
         col.addView(ScrollView(host).apply { addView(list) }, ui.lp(h = 0, weight = 1f))
         col.addView(ui.navBar("← Back" to { host.pop() }, "Home" to { host.goHome() }))
         return col
     }
 
+    /** Libraries and shops that live on the web rather than as a feed we can browse in here. */
+    private fun moreLibraries(): View {
+        val col = ui.vertical()
+        col.addView(ui.group("More libraries"))
+        for (s in Catalogs.SOURCES) col.addView(ui.row(s.name, if (s.free) "Free" else "Paid") { openWeb(host, s.url) })
+        col.addView(ui.text(
+            "These open in your browser. Standard Ebooks keeps its catalogue for Patrons Circle members — if you are one, add it with + Add.",
+            13f, p.soft,
+        ).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 10, 18, 16) })
+        return col
+    }
+
     companion object {
-        /** Sign in to a catalog (Standard Ebooks: your Patrons Circle email, password left blank). */
-        fun signIn(host: HomeActivity, c: Catalog) {
-            val ui = host.ui
-            val col = ui.vertical().apply { setPadding(0, 0, 0, ui.dp(16)) }
-            col.addView(ui.mono("Sign in · ${c.name}", 11f).also { ui.margins(it, 18, 16, 18, 6) })
-            if (c.id == "standard-ebooks") {
-                col.addView(ui.text("Standard Ebooks' catalog is a thank-you for Patrons Circle members: use the email you joined with and leave the password empty. Single books stay free on their website.", 13f, ui.p.soft).apply {
-                    setLineSpacing(0f, 1.3f)
-                }.also { ui.margins(it, 18, 0, 18, 10) })
-            }
-            val user = field(ui, "Email or username", c.user, InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
-            val pass = field(ui, "Password (optional)", c.pass, InputType.TYPE_TEXT_VARIATION_PASSWORD)
-            col.addView(user); ui.margins(user, 18, 0, 18, 8)
-            col.addView(pass); ui.margins(pass, 18, 0, 18, 12)
-            val save = ui.boxButton("Save") {
-                Catalogs.save(host.prefs, c.copy(user = user.text.toString().trim(), pass = pass.text.toString()))
-                host.dismissSheet()
-            }
-            col.addView(save); ui.margins(save, 18, 0, 18, 0)
-            host.showSheet(col)
+        /** Opens [url] in a browser. A minimal phone may not have one, so say so rather than fail silently. */
+        fun openWeb(host: HomeActivity, url: String) {
+            val opened = PhoneCheck.open(host, Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            if (!opened) Toast.makeText(host, "Nothing here can open web pages", Toast.LENGTH_LONG).show()
         }
 
         /** Add (or edit) a user catalog. */
@@ -143,10 +141,11 @@ class FeedScreen(host: HomeActivity, private val catalog: Catalog, private val u
         val body = ui.vertical().apply { setPadding(0, 0, 0, ui.dp(12)) }
         when {
             error != null -> body.addView(errorView())
-            f == null -> body.addView(ui.mono("Loading…", 11f).also { ui.margins(it, 18, 24, 18, 0) })
+            f == null -> body.addView(waiting("Loading…"))
             f.singleBook != null -> body.addView(bookPage(f.singleBook!!))
             else -> {
                 if (f.search != null) body.addView(searchBox(f))
+                categoriesRow()?.let { body.addView(it); body.addView(ui.rule(soft = true)) }
                 if (entries.isEmpty()) body.addView(ui.text("Nothing here.", 15f, p.soft).also { ui.margins(it, 18, 20, 18, 0) })
                 for (e in entries) {
                     body.addView(if (e.downloads.isNotEmpty()) bookRow(e) else navRow(e))
@@ -182,7 +181,12 @@ class FeedScreen(host: HomeActivity, private val catalog: Catalog, private val u
         fetch(more) { result ->
             loadingMore = false
             result.onSuccess { entries = entries + it.entries; next = it.next }
-                .onFailure { Toast.makeText(host, "Couldn't load more", Toast.LENGTH_SHORT).show() }
+                // Keep what's already loaded rather than throwing the page away for a failed next page.
+                .onFailure { t ->
+                    val why = if (t is Net.HttpError && t.code == 403) "${catalog.name} is refusing more requests for now"
+                    else "Couldn't load more"
+                    Toast.makeText(host, why, Toast.LENGTH_LONG).show()
+                }
         }
     }
 
@@ -199,11 +203,16 @@ class FeedScreen(host: HomeActivity, private val catalog: Catalog, private val u
 
     private fun fail(t: Throwable) {
         needsSignIn = t is Net.AuthRequired
-        error = when (t) {
-            is Net.AuthRequired -> "${catalog.name} needs you to sign in."
-            is Net.HttpError -> "The catalog answered with an error (${t.code})."
-            is IllegalArgumentException -> "That address isn't an OPDS catalog."
-            else -> "Couldn't reach the catalog. Check your connection."
+        error = when {
+            t is Net.AuthRequired -> "${catalog.name} needs you to sign in."
+            // 403 is the site refusing us, usually a rate limit that lifts on its own. Trying again
+            // from in here cannot help, so say whose fault it is and offer the way out.
+            t is Net.HttpError && t.code == 403 ->
+                "${catalog.name} is refusing requests at the moment. That's the site rather than your " +
+                    "connection or this app, and it usually clears by itself. You can browse their website instead."
+            t is Net.HttpError -> "${catalog.name} answered with an error (${t.code})."
+            t is IllegalArgumentException -> "That address isn't an OPDS catalogue."
+            else -> "Couldn't reach ${catalog.name}. Check your connection."
         }
     }
 
@@ -212,14 +221,47 @@ class FeedScreen(host: HomeActivity, private val catalog: Catalog, private val u
     }
 
     private fun errorView(): View = ui.vertical().apply {
-        addView(ui.text(error.orEmpty(), 15f).also { ui.margins(it, 18, 24, 18, 14) })
-        val retry = ui.boxButton(if (needsSignIn) "Sign in" else "Try again") {
-            if (needsSignIn) CatalogsScreen.signIn(host, catalog) else { error = null; redraw() }
+        addView(ui.text(error.orEmpty(), 15f).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 24, 18, 14) })
+        val retry = ui.boxButton(if (needsSignIn) "Add a sign-in" else "Try again") {
+            if (needsSignIn) CatalogsScreen.editCatalog(host, catalog) else { error = null; redraw() }
         }
         addView(retry); ui.margins(retry, 18, 0, 18, 0)
+        val web = ui.boxButton("Open ${catalog.name} online") {
+            CatalogsScreen.openWeb(host, Catalogs.webPage(catalog, url))
+        }
+        addView(web); ui.margins(web, 18, 10, 18, 0)
     }
 
     // ---- rows ----------------------------------------------------------------------------------
+
+    /** A turning page over the wait, so a slow catalogue looks busy rather than stuck. */
+    private fun waiting(label: String): View = ui.vertical().apply {
+        gravity = Gravity.CENTER_HORIZONTAL
+        addView(PageTurnView(host, p), LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT,
+        ).apply { gravity = Gravity.CENTER_HORIZONTAL })
+        addView(ui.mono(label, 11f).apply { gravity = Gravity.CENTER }.also { ui.margins(it, 0, 14, 0, 0) })
+        ui.margins(this, 18, 40, 18, 0)
+    }
+
+    /**
+     * Gutenberg's feed offers only Popular, Latest and Random — its subjects and bookshelves live
+     * on the website. Offer them from the catalogue's front page, where they're looked for.
+     */
+    private fun categoriesRow(): View? {
+        if (url != catalog.url || catalog.web.isBlank()) return null
+        val row = ui.horizontal().apply {
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(ui.dp(18), ui.dp(14), ui.dp(18), ui.dp(14))
+        }
+        val names = ui.vertical()
+        names.addView(ui.serif("Browse by category", 16f, bold = true))
+        names.addView(ui.text("Subjects and bookshelves, on their website", 13f, p.soft).also { ui.margins(it, t = 3) })
+        row.addView(names, ui.lp(0, weight = 1f))
+        row.addView(ui.mono("↗", 14f, p.text))
+        ui.tappable(row, { CatalogsScreen.openWeb(host, catalog.web) })
+        return row
+    }
 
     private fun searchBox(f: Opds.Feed): View {
         val box = EditText(host).apply {
@@ -249,10 +291,15 @@ class FeedScreen(host: HomeActivity, private val catalog: Catalog, private val u
             return
         }
         Catalogs.net.execute {
-            val template = runCatching { Opds.parseOpenSearch(Net.get(target, catalog.auth), target) }.getOrNull()
+            val r = runCatching { Opds.parseOpenSearch(Net.get(target, catalog.auth), target) }
             host.library.postToMain {
-                if (template == null) Toast.makeText(host, "Search isn't available here", Toast.LENGTH_SHORT).show()
-                else host.push(FeedScreen(host, catalog, Opds.searchUrl(template, q), "Search: $q"))
+                val template = r.getOrNull()
+                val blocked = (r.exceptionOrNull() as? Net.HttpError)?.code == 403
+                when {
+                    template != null -> host.push(FeedScreen(host, catalog, Opds.searchUrl(template, q), "Search: $q"))
+                    blocked -> Toast.makeText(host, "${catalog.name} is refusing requests right now", Toast.LENGTH_LONG).show()
+                    else -> Toast.makeText(host, "Search isn't available here", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

@@ -7,7 +7,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
-/** An OPDS catalog. [user]/[pass] are for HTTP Basic sign-in (Standard Ebooks: email, blank password). */
+/** An OPDS catalog. [user]/[pass] are for HTTP Basic sign-in on servers that ask for it. */
 data class Catalog(
     val id: String,
     val name: String,
@@ -16,19 +16,47 @@ data class Catalog(
     val user: String = "",
     val pass: String = "",
     val builtIn: Boolean = false,
-    val needsSignIn: Boolean = false,
+    /** A page a person can read in a browser, for when the feed itself won't load. */
+    val web: String = "",
 ) {
     val auth: String? get() = if (user.isNotBlank()) "$user:$pass" else null
 }
 
+/** Somewhere to find books. [free] separates public-domain libraries from shops. */
+data class BookSource(val name: String, val url: String, val note: String, val free: Boolean)
+
 object Catalogs {
     private val BUILT_IN = listOf(
-        Catalog("gutenberg", "Project Gutenberg", "https://www.gutenberg.org/ebooks.opds/", "75,000+ free classics", builtIn = true),
         Catalog(
-            "standard-ebooks", "Standard Ebooks", "https://standardebooks.org/feeds/opds",
-            "Beautifully typeset classics · Patrons Circle sign-in", builtIn = true, needsSignIn = true,
+            "gutenberg", "Project Gutenberg", "https://www.gutenberg.org/ebooks.opds/",
+            "75,000+ free classics", builtIn = true, web = "https://www.gutenberg.org/ebooks/categories.html",
         ),
     )
+
+    /**
+     * Libraries and shops worth knowing about, none of them reachable as an in-app feed: Standard
+     * Ebooks keeps its catalog for Patrons Circle members, and the shops sell through their own
+     * sites. Every one of these opens in a browser; nothing is bought inside the app.
+     */
+    val SOURCES = listOf(
+        BookSource("Standard Ebooks", "https://standardebooks.org/ebooks", "Carefully typeset classics", true),
+        BookSource("Open Library", "https://openlibrary.org", "Borrow scanned books", true),
+        BookSource("LibriVox", "https://librivox.org", "Public-domain audiobooks", true),
+        BookSource("Google Play Books", "https://play.google.com/store/books", "Buy ebooks", false),
+        BookSource("Kobo", "https://www.kobo.com/ebooks", "Buy ebooks", false),
+        BookSource("Amazon Kindle", "https://www.amazon.com/kindle-store", "Buy ebooks", false),
+    )
+
+    /**
+     * Where to send someone whose feed won't load. Falls back to the site's front page, since an
+     * OPDS address is XML a browser will only offer to download.
+     */
+    fun webPage(catalog: Catalog, feedUrl: String): String {
+        if (catalog.web.isNotBlank()) return catalog.web
+        val u = Uri.parse(feedUrl.ifBlank { catalog.url })
+        val host = u.host ?: return catalog.url
+        return "${u.scheme ?: "https"}://$host"
+    }
 
     fun all(prefs: Prefs): List<Catalog> {
         val saved = read(prefs)
@@ -81,6 +109,8 @@ object Catalogs {
                     id = Library.idFor(uri), uri = uri, format = format,
                     title = entry.title.ifBlank { safe }, author = entry.author,
                     fileTitle = entry.title, sourceUrl = link.href,
+                    // A PDF or text download has no metadata of its own to read subjects from later.
+                    subjects = entry.categories,
                 )
                 lib.postToMain {
                     lib.addAll(listOf(book))
@@ -89,6 +119,9 @@ object Catalogs {
                 }
             } catch (e: Net.AuthRequired) {
                 lib.postToMain { onDone(null, "This catalog needs you to sign in") }
+            } catch (e: Net.HttpError) {
+                val why = if (e.code == 403) "${catalog.name} is refusing downloads right now" else "The catalog answered with an error (${e.code})"
+                lib.postToMain { onDone(null, why) }
             } catch (e: Exception) {
                 lib.postToMain { onDone(null, "Download failed: ${e.message ?: "network error"}") }
             }
