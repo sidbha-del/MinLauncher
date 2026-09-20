@@ -1,6 +1,6 @@
-# Book Launcher — PRD
+# ReadFirst — PRD
 
-2026-09-19 · MinLauncher
+2026-09-19 · MinLauncher. Renamed from "Book Launcher"; the package is `app.readfirst`.
 
 **Lineage:** Second-ranked option (5.75/10) on the weighted scorecard from the three-panel brainstorm. The strongest evidence behind this concept is that two independent hobbyists already built versions of it (Readers Launcher, PageFlow) — proof the itch is real, though neither shows mainstream traction, which is neutral-to-negative evidence for a commercial product, not a strength. Its weakest score was Differentiation (5/10): the original spec never resolved why this needs to own the Android HOME role rather than existing as a great reading app plus a widget. This PRD resolves that by applying the same mechanism family that won Intent Queue — remove the app grid as the reflexive escape hatch — anchored to reading instead of task intentions, and by adding e-ink device sync as a second, harder-to-copy differentiator.
 
