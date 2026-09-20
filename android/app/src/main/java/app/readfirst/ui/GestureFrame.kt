@@ -19,6 +19,14 @@ class GestureFrame(context: Context) : FrameLayout(context) {
     /** Long-press on empty space (children that handle touches keep their own long-press). */
     var onLongPress: (() -> Unit)? = null
 
+    /**
+     * Asked before a vertical swipe is claimed, with -1 for a drag that reveals content above and
+     * 1 for below. Answer true while the content can still scroll that way and the drag is left to
+     * it, so a screen taller than the window stays reachable instead of every drag becoming
+     * navigation.
+     */
+    var contentScrolls: ((Int) -> Boolean)? = null
+
     private var downX = 0f
     private var downY = 0f
     private var dragging = false
@@ -43,7 +51,8 @@ class GestureFrame(context: Context) : FrameLayout(context) {
                 val dy = ev.y - downY
                 val horizontal = abs(dx) > slop && abs(dx) > abs(dy) * 1.5f && (onSwipeLeft != null || onSwipeRight != null)
                 val vertical = abs(dy) > slop && abs(dy) > abs(dx) * 1.5f &&
-                    ((dy < 0 && onSwipeUp != null) || (dy > 0 && onSwipeDown != null))
+                    ((dy < 0 && onSwipeUp != null) || (dy > 0 && onSwipeDown != null)) &&
+                    contentScrolls?.invoke(if (dy < 0) 1 else -1) != true
                 if (!dragging && (horizontal || vertical)) dragging = true
                 if (dragging) {
                     removeCallbacks(longPress)

@@ -10,6 +10,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import app.readfirst.HomeActivity
@@ -46,14 +47,28 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
 
         val pins = pinnedApps()
         if (pins != null) col.addView(pins)
-        col.addView(ui.space(), ui.lp(h = 0, weight = 1f))
-        col.addView(TimeStats.homeBlock(host))
-        col.addView(ui.navBar(
+        // No weighted filler in here: it would swallow the overflow, leaving the column exactly one
+        // screen tall, clipped, and reporting that it has nothing to scroll to.
+        val scroll = ScrollView(host).apply { addView(col) }
+        frame.contentScrolls = { direction -> scroll.canScrollVertically(direction) }
+        frame.addView(scroll)
+
+        /*
+         * Home doesn't scroll — the gesture frame claims vertical drags for Apps and the
+         * notification shade, so a scrolling child could never win one. That makes the space
+         * finite: with a notice, a book, an audiobook prompt and pinned apps all showing, the
+         * weighted gap above the navigation collapsed and pushed it off the bottom of the screen.
+         * Giving navigation its own row outside the gesture area reserves that space first, so
+         * Library and Apps stay reachable however full the screen above them gets.
+         */
+        val root = ui.vertical()
+        root.addView(frame, ui.lp(h = 0, weight = 1f))
+        root.addView(TimeStats.homeBlock(host))
+        root.addView(ui.navBar(
             "← Library" to { host.push(LibraryScreen(host)) },
             "Apps ↑" to { host.push(AppsScreen(host)) },
         ))
-        frame.addView(col)
-        return frame
+        return root
     }
 
     override fun onTimeTick() {
