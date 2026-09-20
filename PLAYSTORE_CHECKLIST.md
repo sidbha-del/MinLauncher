@@ -50,8 +50,8 @@ Either way the work below is the same. Start the closed test **today**, because 
 
 | # | Asset | Spec |
 | --- | --- | --- |
-| 4.1 | App icon | 512×512 PNG (export from the adaptive icon) |
-| 4.2 | Feature graphic | 1024×500 |
+| 4.1 | **App icon** | **Done**: `store/assets/playstore_icon_512x512.png` (512×512 PNG, 350 KB) |
+| 4.2 | **Feature graphic** | **Done**: `store/assets/playstore_feature_graphic_1024x500.png` (1024×500 PNG, 1.2 MB) |
 | 4.3 | Phone screenshots | 2–8, 9:16. Use: Home (Now reading), Shelf, Stack, Reader in Night, Black ink, Gutenberg catalog, Now listening |
 | 4.4 | Short description | 80 chars: *"Unlock your phone into your book. A calm home screen that makes reading first."* |
 | 4.5 | Full description | Draft in `store/listing.md` |
