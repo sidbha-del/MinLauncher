@@ -1,9 +1,13 @@
 package app.readfirst.ui
 
+import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.BatteryManager
+import android.provider.AlarmClock
+import android.provider.Settings
 import android.text.TextUtils
 import android.text.format.DateFormat
 import android.view.Gravity
@@ -17,7 +21,9 @@ import app.readfirst.HomeActivity
 import app.readfirst.book.Progress
 import app.readfirst.data.BookEntry
 import app.readfirst.data.NowPlaying
-import app.readfirst.data.Prefs
+import app.readfirst.data.PhoneCheck
+import app.readfirst.data.StatusBarStyle
+import app.readfirst.data.Weather
 import java.util.Date
 import java.util.Locale
 
@@ -27,11 +33,11 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
     private var clock: TextView? = null
     private var date: TextView? = null
     private var battery: TextView? = null
+    private var weatherLabel: TextView? = null
+    private var alarmLabel: TextView? = null
 
     override fun build(): View {
         val frame = GestureFrame(host).apply {
-            onSwipeUp = { host.push(AppsScreen(host)) }
-            onSwipeRight = { host.push(LibraryScreen(host)) }
             onSwipeDown = { expandNotifications(host) }
             onLongPress = { HomeMenu.show(host) }
         }
@@ -45,29 +51,18 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         else if (book != null) nowReading(col, book, compact = listening != null)
         if (listening != null) col.addView(nowListening(listening)) else listeningPrompt()?.let { col.addView(it) }
 
-        val pins = pinnedApps()
-        if (pins != null) col.addView(pins)
+        // The dock (pinned apps) is rendered once by Pager, below all three pages — not here.
         // No weighted filler in here: it would swallow the overflow, leaving the column exactly one
         // screen tall, clipped, and reporting that it has nothing to scroll to.
         val scroll = ScrollView(host).apply { addView(col) }
         frame.contentScrolls = { direction -> scroll.canScrollVertically(direction) }
         frame.addView(scroll)
 
-        /*
-         * Home doesn't scroll — the gesture frame claims vertical drags for Apps and the
-         * notification shade, so a scrolling child could never win one. That makes the space
-         * finite: with a notice, a book, an audiobook prompt and pinned apps all showing, the
-         * weighted gap above the navigation collapsed and pushed it off the bottom of the screen.
-         * Giving navigation its own row outside the gesture area reserves that space first, so
-         * Library and Apps stay reachable however full the screen above them gets.
-         */
+        // Home's own vertical drags (the notification shade) still need the gesture frame; Library
+        // and Apps are reached by paging, owned by the Pager this screen sits inside of.
         val root = ui.vertical()
         root.addView(frame, ui.lp(h = 0, weight = 1f))
         root.addView(TimeStats.homeBlock(host))
-        root.addView(ui.navBar(
-            "← Library" to { host.push(LibraryScreen(host)) },
-            "Apps ↑" to { host.push(AppsScreen(host)) },
-        ))
         return root
     }
 
@@ -83,7 +78,11 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
     private fun nowListening(s: NowPlaying.State): View {
         val np = NowPlaying.get(host)
         val col = ui.vertical()
-        col.addView(ui.mono("Now listening · ${s.appLabel}", 11f).also { ui.margins(it, 18, 24, 18, 0) })
+        val header = ui.horizontal().apply { gravity = Gravity.CENTER_VERTICAL }
+        header.addView(ui.mono("Now listening · ${s.appLabel}", 11f), ui.lp(0, weight = 1f))
+        header.addView(ui.mono("MORE", 11f).also { ui.tappable(it, { NowListeningSheet.show(host, s) }) })
+        col.addView(header)
+        ui.margins(header, 18, 24, 18, 0)
 
         val row = ui.horizontal().apply { gravity = Gravity.CENTER_VERTICAL }
         val art = ImageView(host).apply {
@@ -103,6 +102,7 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
 
         if (s.durationMs > 0) {
             val bar = SegmentBar(host, p, s.fraction)
+            if (s.canSeek) bar.onSeek = { fraction -> np.seekTo(s, fraction) }
             listenBar = bar
             col.addView(bar, ui.lp().apply { setMargins(ui.dp(18), ui.dp(14), ui.dp(18), 0) })
         }
@@ -110,11 +110,12 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         listenLine = line
         col.addView(line.also { ui.margins(it, 18, 7, 18, 0) })
 
+        val skip = host.prefs.audioSkipMs
         val controls = ui.horizontal()
-        controls.addView(ui.boxButton("−30s") { np.jump(s, -30_000) }, ui.lp(0, weight = 1f))
+        controls.addView(ui.boxButton("−${skip / 1000}s") { np.jump(s, -skip.toLong()) }, ui.lp(0, weight = 1f))
         controls.addView(ui.boxButton(if (s.playing) "Pause" else "Play") { np.togglePlay(s) },
             ui.lp(0, weight = 1.4f).apply { leftMargin = ui.dp(8); rightMargin = ui.dp(8) })
-        controls.addView(ui.boxButton("+30s") { np.jump(s, 30_000) }, ui.lp(0, weight = 1f))
+        controls.addView(ui.boxButton("+${skip / 1000}s") { np.jump(s, skip.toLong()) }, ui.lp(0, weight = 1f))
         col.addView(controls)
         ui.margins(controls, 18, 14, 18, 0)
         return col
@@ -158,26 +159,50 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         listenBar?.let { it.fraction = s.fraction; it.invalidate() }
     }
 
-    /** Time, date, battery. Long-press opens the Home menu (Settings, ink, books). */
+    /**
+     * A big clock, plus date/battery/next alarm/weather depending on [Prefs.statusBarStyle] —
+     * every element opens what it's about (alarms, calendar, battery, the weather page), and
+     * long-press anywhere still opens the Home menu, since none of the children claim long-press
+     * themselves.
+     */
     private fun statusBar(): View {
-        val row = ui.horizontal().apply {
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(ui.dp(18), ui.dp(12), ui.dp(18), ui.dp(10))
+        val style = host.prefs.statusBarStyle
+        val col = ui.vertical().apply { setPadding(ui.dp(18), ui.dp(14), ui.dp(18), ui.dp(12)) }
+
+        val timeRow = ui.horizontal().apply { gravity = Gravity.CENTER_VERTICAL }
+        clock = ui.serif("", 40f, bold = true).apply { includeFontPadding = false }
+        ui.tappable(clock!!, { openAlarms() })
+        timeRow.addView(clock, ui.lp(0, weight = 1f))
+        battery = ui.mono("", 13f, p.soft)
+        ui.tappable(battery!!, { openBatterySettings() })
+        timeRow.addView(battery, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        col.addView(timeRow)
+
+        if (style != StatusBarStyle.MINIMAL) {
+            date = ui.mono("", 13f, p.text)
+            ui.tappable(date!!, { openCalendar() })
+            col.addView(date, ui.lp().apply { topMargin = ui.dp(4) })
         }
-        clock = ui.mono("", 13f, p.text)
-        date = ui.mono("", 13f, p.text).apply { gravity = Gravity.CENTER }
-        battery = ui.mono("", 13f, p.text).apply { gravity = Gravity.END }
-        row.addView(clock, ui.lp(0, weight = 1f))
-        row.addView(date, ui.lp(0, weight = 1.4f))
-        row.addView(battery, ui.lp(0, weight = 1f))
-        row.setOnLongClickListener {
+
+        if (style == StatusBarStyle.FULL) {
+            val infoRow = ui.horizontal()
+            weatherLabel = ui.mono("", 12f, p.soft)
+            ui.tappable(weatherLabel!!, { openWeather() })
+            alarmLabel = ui.mono("", 12f, p.soft).apply { gravity = Gravity.END }
+            ui.tappable(alarmLabel!!, { openAlarms() })
+            infoRow.addView(weatherLabel, ui.lp(0, weight = 1f))
+            infoRow.addView(alarmLabel, ui.lp(0, weight = 1f))
+            col.addView(infoRow, ui.lp().apply { topMargin = ui.dp(8) })
+        }
+
+        col.setOnLongClickListener {
             HomeMenu.show(host)
             true
         }
-        row.contentDescription = "Status. Long-press for settings."
+        col.contentDescription = "Status. Long-press for settings."
         updateStatus()
         return ui.vertical().apply {
-            addView(row)
+            addView(col)
             addView(ui.rule())
         }
     }
@@ -187,6 +212,46 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         clock?.text = DateFormat.format(if (DateFormat.is24HourFormat(host)) "HH:mm" else "h:mm", now)
         date?.text = DateFormat.format("EEE d MMM", now).toString().uppercase(Locale.getDefault())
         battery?.text = batteryPercent(host)?.let { "$it%" } ?: ""
+        alarmLabel?.let { label ->
+            val text = nextAlarmText()
+            label.text = text ?: ""
+            label.visibility = if (text == null) View.GONE else View.VISIBLE
+        }
+        weatherLabel?.let { label ->
+            Weather.current { state ->
+                label.text = state?.line ?: ""
+                label.visibility = if (state == null) View.GONE else View.VISIBLE
+            }
+        }
+    }
+
+    private fun nextAlarmText(): String? {
+        val info = host.getSystemService(AlarmManager::class.java)?.nextAlarmClock ?: return null
+        val fmt = if (DateFormat.is24HourFormat(host)) "HH:mm" else "h:mm a"
+        return "Alarm " + DateFormat.format(fmt, info.triggerTime)
+    }
+
+    private fun openAlarms() {
+        if (!PhoneCheck.open(host, Intent(AlarmClock.ACTION_SHOW_ALARMS))) {
+            Toast.makeText(host, "No clock app found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openCalendar() {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CALENDAR)
+        if (!PhoneCheck.open(host, intent)) Toast.makeText(host, "No calendar app found", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun openBatterySettings() {
+        if (!PhoneCheck.open(host, Intent(Intent.ACTION_POWER_USAGE_SUMMARY), Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS))) {
+            Toast.makeText(host, "Open Settings → Battery", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openWeather() {
+        if (!PhoneCheck.open(host, Intent(Intent.ACTION_VIEW, Uri.parse(Weather.WEB_URL)))) {
+            Toast.makeText(host, "No browser found on this device", Toast.LENGTH_SHORT).show()
+        }
     }
 
     /** [compact]: something is also playing, so the excerpt gives up some lines to fit both. */
@@ -251,40 +316,6 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
             addView(ui.mono("Now reading", 11f).also { ui.margins(it, 18, 22, 18, 0) })
             addView(box)
             ui.margins(box, 18, 24, 18, 0)
-        }
-    }
-
-    /** Up to four pinned apps, only when the user pinned some. */
-    private fun pinnedApps(): View? {
-        val keys = host.prefs.pinned
-        if (keys.isEmpty()) return null
-        val byKey = host.catalog.apps.associateBy { it.key }
-        val apps = keys.mapNotNull { byKey[it] }
-        if (apps.isEmpty()) return null
-        val row = ui.horizontal()
-        val size = ui.dp(36)
-        for (app in apps.take(Prefs.MAX_PINS)) {
-            val cell = ui.vertical().apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(0, ui.dp(10), 0, ui.dp(8))
-            }
-            val icon = ImageView(host)
-            cell.addView(icon, LinearLayout.LayoutParams(size, size))
-            host.catalog.loadIcon(app, size, p.ink, p.dark) { icon.setImageBitmap(it) }
-            cell.addView(ui.text(host.prefs.label(app.key, app.label), 12f).apply {
-                maxLines = 1
-                ellipsize = TextUtils.TruncateAt.END
-                gravity = Gravity.CENTER
-            }.also { ui.margins(it, 4, 6, 4, 0) })
-            ui.tappable(cell, { host.launchApp(app) }, { AppActions.show(host, app) })
-            cell.contentDescription = app.label
-            row.addView(cell, ui.lp(0, weight = 1f))
-        }
-        repeat(Prefs.MAX_PINS - apps.size.coerceAtMost(Prefs.MAX_PINS)) { row.addView(ui.space(), ui.lp(0, weight = 1f)) }
-        return ui.vertical().apply {
-            addView(ui.rule(soft = true))
-            addView(row)
-            ui.margins(this, 18, 20, 18, 0)
         }
     }
 

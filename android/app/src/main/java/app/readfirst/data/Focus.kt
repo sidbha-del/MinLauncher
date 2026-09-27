@@ -116,6 +116,18 @@ object Focus {
     fun listeningMs(context: Context, dayStart: Long): Long =
         context.getSharedPreferences("reading_time", Context.MODE_PRIVATE).getLong("l" + dayKey(dayStart), 0)
 
+    /** Podcast playback time (from [ListeningTracker]) — kept separate from reading, since a
+     *  podcast isn't the book you were trying to read more of the way an audiobook is. */
+    fun addPodcastListening(context: Context, ms: Long) {
+        if (ms <= 0 || ms > 12 * 3600_000L) return
+        val sp = context.getSharedPreferences("reading_time", Context.MODE_PRIVATE)
+        val key = "pc" + dayKey(System.currentTimeMillis())
+        sp.edit().putLong(key, sp.getLong(key, 0) + ms).apply()
+    }
+
+    fun podcastMs(context: Context, dayStart: Long): Long =
+        context.getSharedPreferences("reading_time", Context.MODE_PRIVATE).getLong("pc" + dayKey(dayStart), 0)
+
     /** The user chose their book (or "Not now") at the pause instead of opening the app. */
     fun recordResisted(context: Context) {
         val sp = context.getSharedPreferences("reading_time", Context.MODE_PRIVATE)
@@ -141,7 +153,14 @@ object Focus {
 
     // ---- usage statistics --------------------------------------------------------------------
 
-    data class Day(val readingMs: Long, val workMs: Long, val scrollingMs: Long, val otherMs: Long, val hasUsage: Boolean) {
+    /** [listeningMs] is already included in [readingMs] (listening counts as reading); it's kept
+     *  alongside it only so the UI can show the split, never added again into [totalMs].
+     *  [podcastMs], unlike audiobook listening, is deliberately kept out of [readingMs] and
+     *  [totalMs] entirely — a podcast isn't the book you were trying to read more of. */
+    data class Day(
+        val readingMs: Long, val workMs: Long, val scrollingMs: Long, val otherMs: Long, val hasUsage: Boolean,
+        val listeningMs: Long = 0, val podcastMs: Long = 0,
+    ) {
         val totalMs get() = readingMs + workMs + scrollingMs + otherMs
     }
 
@@ -172,8 +191,10 @@ object Focus {
         val start = startOfDay(daysAgo)
         val end = if (daysAgo == 0) System.currentTimeMillis() else startOfDay(daysAgo - 1)
         // Our reader's timer plus audiobook playback (which mostly happens with the screen off).
-        val ownReading = readingMs(context, start) + listeningMs(context, start)
-        if (!hasUsageAccess(context)) return Day(ownReading, 0, 0, 0, false)
+        val listening = listeningMs(context, start)
+        val podcast = podcastMs(context, start)
+        val ownReading = readingMs(context, start) + listening
+        if (!hasUsageAccess(context)) return Day(ownReading, 0, 0, 0, false, listening, podcast)
         val perApp = foregroundTime(context, start, end)
         val prefs = Prefs.get(context)
         val catalog = AppCatalog.get(context)
@@ -190,13 +211,14 @@ object Focus {
                 pkg == context.packageName -> {} // our reader is counted by our own timer; Home isn't phone use to split
                 pkg in readingApps -> reading += ms
                 NowPlaying.isAudiobookApp(context, pkg) -> {} // counted by playback time
+                NowPlaying.isPodcastApp(context, pkg) -> {} // counted separately, by playback time
                 pkg in distracting -> scrolling += ms
                 isWork(context, prefs, pkg) -> work += ms
                 isSystemUi(pkg) -> {}
                 else -> other += ms
             }
         }
-        return Day(reading, work, scrolling, other, true)
+        return Day(reading, work, scrolling, other, true, listening, podcast)
     }
 
     private fun isSystemUi(pkg: String) = pkg == "com.android.systemui" || pkg.contains("launcher") || pkg == "android"

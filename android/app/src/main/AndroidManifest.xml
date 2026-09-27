@@ -17,6 +17,11 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Uninstall from the app list's long-press menu (ACTION_DELETE). A normal permission,
+         granted automatically at install; without it the system uninstaller opens and closes
+         immediately with no error. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+
     <!-- Launcher package visibility without QUERY_ALL_PACKAGES. -->
     <queries>
         <intent>
@@ -68,6 +73,9 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- Fires the audiobook sleep timer; inexact, so it needs no special permission. -->
+        <receiver android:name=".data.SleepTimer$Receiver" android:exported="false" />
 
         <!-- The companion widget for people who keep their own home screen. -->
         <receiver

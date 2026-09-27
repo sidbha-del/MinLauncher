@@ -12,4 +12,9 @@ abstract class Screen(val host: HomeActivity) {
     abstract fun build(): View
     open fun onHide() {}
     open fun onTimeTick() {}
+
+    /** True while this screen is mid-gesture and must not have its view torn out from under it
+     *  by a background rebuild (a prefs/library change, a clock tick). [Pager] is the only one
+     *  that ever needs this, for its live page-drag. */
+    open fun blocksRebuild(): Boolean = false
 }

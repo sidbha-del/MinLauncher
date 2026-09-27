@@ -22,9 +22,9 @@ import app.readfirst.data.NowPlaying
 import app.readfirst.data.Prefs
 import app.readfirst.data.Scanner
 import app.readfirst.reader.ReaderActivity
-import app.readfirst.ui.HomeScreen
 import app.readfirst.ui.InkPalette
 import app.readfirst.ui.PageLook
+import app.readfirst.ui.Pager
 import app.readfirst.ui.Screen
 import app.readfirst.ui.setBarIcons
 import app.readfirst.ui.SetupScreen
@@ -49,6 +49,9 @@ class HomeActivity : Activity() {
     private lateinit var root: FrameLayout
     private val stack = ArrayDeque<Screen>()
     private var sheet: View? = null
+    /** Rebuilds the open sheet's content on resume — for a sheet whose content depends on a
+     *  system permission the user may have just granted in Settings and come back from. */
+    var sheetRefresh: (() -> Unit)? = null
     private var lastScan = 0L
     private var rebuildPosted = false
     private var visible = false
@@ -79,7 +82,7 @@ class HomeActivity : Activity() {
         setContentView(root)
         applyEdgeToEdgeInsets(root)
         paintWindow()
-        stack.addLast(HomeScreen(this))
+        stack.addLast(Pager(this))
         if (!prefs.setupDone) {
             pinDefaultCommsApps()
             stack.addLast(SetupScreen(this))
@@ -166,7 +169,7 @@ class HomeActivity : Activity() {
             ui = makeUi()
             paintWindow()
         }
-        if (sheet == null) rebuild()
+        if (sheet == null) rebuild() else sheetRefresh?.invoke()
         if (SystemClock.elapsedRealtime() - lastScan > 5 * 60_000L) {
             lastScan = SystemClock.elapsedRealtime()
             Scanner.refresh(this)
@@ -192,6 +195,7 @@ class HomeActivity : Activity() {
     fun goHome() {
         dismissSheet()
         while (stack.size > 1) stack.removeLast().onHide()
+        (stack.firstOrNull() as? Pager)?.centerOnHome()
         render()
     }
 
@@ -205,6 +209,12 @@ class HomeActivity : Activity() {
         rebuildPosted = true
         root.post {
             rebuildPosted = false
+            if (stack.lastOrNull()?.blocksRebuild() == true) {
+                // The pager is mid-drag: rebuilding now would tear its view out from under the
+                // user's finger. Try again next frame rather than skip the update outright.
+                scheduleRebuild(inkMayChange)
+                return@post
+            }
             if (inkMayChange && lookChanged()) {
                 ui = makeUi()
                 paintWindow()
@@ -245,6 +255,7 @@ class HomeActivity : Activity() {
             root.removeView(sheet)
             sheet = null
         }
+        sheetRefresh = null
         // A sheet rises into the space the keyboard occupies, so opening one straight from the
         // app search — searching for YouTube, say, and being offered your book instead — left the
         // sheet behind the keyboard, with only a dimmed screen to show for it. Sheets that do want
@@ -257,6 +268,7 @@ class HomeActivity : Activity() {
     fun dismissSheet() {
         val s = sheet ?: return
         sheet = null
+        sheetRefresh = null
         root.removeView(s)
         rebuild()
     }

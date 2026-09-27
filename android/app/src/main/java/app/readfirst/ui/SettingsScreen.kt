@@ -12,6 +12,7 @@ import app.readfirst.HomeActivity
 import app.readfirst.data.HomeRole
 import app.readfirst.data.Ink
 import app.readfirst.data.NowPlaying
+import app.readfirst.data.Prefs
 
 /** Settings: ink, home-screen role, pinned and hidden apps, book folders. */
 class SettingsScreen(host: HomeActivity) : Screen(host) {
@@ -93,7 +94,14 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
                 Toast.makeText(host, "Long-press your home screen → Widgets → ReadFirst", Toast.LENGTH_LONG).show()
             }
         })
-        list.addView(ui.row("Pinned apps", "${prefs.pinned.size} / 4") { pinnedSheet() })
+        list.addView(ui.row("Pinned apps", "${prefs.pinned.size} / ${Prefs.MAX_PINS}") { pinnedSheet() })
+        list.addView(ui.row("Show dock on Library & Apps too", if (prefs.dockEverywhere) "On" else "Home only") {
+            prefs.dockEverywhere = !prefs.dockEverywhere
+        })
+        list.addView(ui.row("Status bar", prefs.statusBarStyle.label) {
+            val values = app.readfirst.data.StatusBarStyle.entries
+            prefs.statusBarStyle = values[(values.indexOf(prefs.statusBarStyle) + 1) % values.size]
+        })
         list.addView(ui.row("Open previous launcher once") {
             if (!HomeRole.openOtherLauncherOnce(host)) Toast.makeText(host, "No other home app found", Toast.LENGTH_SHORT).show()
         })
@@ -188,7 +196,7 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
         val byKey = host.catalog.apps.associateBy { it.key }
         val pinned = host.prefs.pinned
         if (pinned.isEmpty()) {
-            col.addView(ui.text("Long-press any app in Apps and choose Pin to home. Up to four.", 14f, p.soft).apply {
+            col.addView(ui.text("Long-press any app in Apps and choose Pin to home. Up to ${Prefs.MAX_PINS}.", 14f, p.soft).apply {
                 setPadding(ui.dp(18), ui.dp(16), ui.dp(18), ui.dp(20))
             })
         }

@@ -63,6 +63,7 @@ class NowPlaying private constructor(context: Context) {
     ) {
         val fraction: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
         val canSeek: Boolean get() = (controller.playbackState?.actions ?: 0L) and PlaybackState.ACTION_SEEK_TO != 0L
+        val canSetSpeed: Boolean get() = (controller.playbackState?.actions ?: 0L) and PlaybackState.ACTION_SET_PLAYBACK_SPEED != 0L
     }
 
     fun isAllowed(): Boolean {
@@ -105,7 +106,7 @@ class NowPlaying private constructor(context: Context) {
         } catch (e: SecurityException) {
             return null
         }
-        val relevant = sessions.filter { allAudio || isAudiobookApp(app, it.packageName) }
+        val relevant = sessions.filter { allAudio || isAudiobookApp(app, it.packageName) || isPodcastApp(app, it.packageName) }
             .filter { it.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)?.isNotBlank() == true }
         val pick = relevant.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: relevant.firstOrNull() ?: return null
         val md = pick.metadata ?: return null
@@ -159,6 +160,17 @@ class NowPlaying private constructor(context: Context) {
             deltaMs < 0 -> tc.rewind()
             else -> tc.fastForward()
         }
+    }
+
+    /** Drag-to-seek: [fraction] is where along the bar the finger landed. */
+    fun seekTo(s: State, fraction: Float) {
+        if (!s.canSeek || s.durationMs <= 0) return
+        s.controller.transportControls.seekTo((fraction.coerceIn(0f, 1f) * s.durationMs).toLong())
+    }
+
+    /** Only meaningful when [State.canSetSpeed]; ignored by the source app otherwise. */
+    fun setSpeed(s: State, speed: Float) {
+        s.controller.transportControls.setPlaybackSpeed(speed)
     }
 
     /** Opens the playing app on its player screen when it provides one. */
@@ -225,6 +237,32 @@ class NowPlaying private constructor(context: Context) {
             return label.contains("audiobook", ignoreCase = true) || label.contains("audio book", ignoreCase = true)
         }
 
+        /** Dedicated podcast apps. Deliberately doesn't include Spotify/YouTube Music/Amazon
+         *  Music: they're dual-purpose, and there's no reliable way to tell a podcast episode
+         *  from a song in their media sessions — a user who adds one of those manually accepts
+         *  that all of its playback counts, music included. */
+        val PODCAST_APPS = setOf(
+            "au.com.shiftyjelly.pocketcasts", // Pocket Casts
+            "com.bambuna.podcastaddict",      // Podcast Addict
+            "fm.castbox.audiobook.radio.podcast", // Castbox
+            "com.podbean.app.podcast",        // Podbean
+            "com.google.android.apps.podcasts", // Google Podcasts (legacy installs)
+            "com.spreaker.app",               // Spreaker
+            "com.overcast",                   // Overcast (rare on Android, harmless to include)
+        )
+
+        /** Same shape as [isAudiobookApp]: the built-in list, "podcast" in the name or package,
+         *  or an app the user added from its long-press menu. */
+        fun isPodcastApp(context: Context, pkg: String): Boolean {
+            if (pkg in PODCAST_APPS || pkg in Prefs.get(context).podcastAdded) return true
+            if (pkg.contains("podcast", ignoreCase = true)) return true
+            val label = runCatching {
+                val pm = context.packageManager
+                pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+            }.getOrDefault("")
+            return label.contains("podcast", ignoreCase = true)
+        }
+
         @Volatile
         private var instance: NowPlaying? = null
 
@@ -252,11 +290,17 @@ class ListeningTracker(private val context: Context) {
         override fun run() {
             val now = System.currentTimeMillis()
             for (pkg in playingSince.keys.toList()) {
-                Focus.addListening(context, now - playingSince.getValue(pkg))
+                addElapsed(pkg, now - playingSince.getValue(pkg))
                 playingSince[pkg] = now
             }
             main.postDelayed(this, 5 * 60_000L)
         }
+    }
+
+    /** Audiobooks count as reading; podcasts are tracked but kept separate — see [Focus.Day]. */
+    private fun addElapsed(pkg: String, ms: Long) {
+        if (NowPlaying.isAudiobookApp(context, pkg)) Focus.addListening(context, ms)
+        else Focus.addPodcastListening(context, ms)
     }
 
     fun start() {
@@ -273,14 +317,14 @@ class ListeningTracker(private val context: Context) {
         for ((c, cb) in callbacks) runCatching { c.unregisterCallback(cb) }
         callbacks.clear()
         val now = System.currentTimeMillis()
-        for (since in playingSince.values) Focus.addListening(context, now - since)
+        for ((pkg, since) in playingSince) addElapsed(pkg, now - since)
         playingSince.clear()
     }
 
     private fun watch(list: List<MediaController>) {
         for ((c, cb) in callbacks) runCatching { c.unregisterCallback(cb) }
         callbacks.clear()
-        watched = list.filter { NowPlaying.isAudiobookApp(context, it.packageName) }
+        watched = list.filter { NowPlaying.isAudiobookApp(context, it.packageName) || NowPlaying.isPodcastApp(context, it.packageName) }
         for (c in watched) {
             val cb = object : MediaController.Callback() {
                 override fun onPlaybackStateChanged(state: PlaybackState?) = update(c.packageName, state)
@@ -301,7 +345,7 @@ class ListeningTracker(private val context: Context) {
         when {
             playing && since == null -> playingSince[pkg] = now
             !playing && since != null -> {
-                Focus.addListening(context, now - since)
+                addElapsed(pkg, now - since)
                 playingSince.remove(pkg)
             }
         }

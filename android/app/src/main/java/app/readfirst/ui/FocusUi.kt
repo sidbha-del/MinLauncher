@@ -218,10 +218,13 @@ object TimeStats {
         col.contentDescription = "Today's screen time. Tap for details."
         Focus.day(host, 0) { d ->
             bar.day = d
+            val read = if (d.listeningMs > 0) "Read ${Focus.format(d.readingMs)} (${Focus.format(d.listeningMs)} listening)"
+                       else "Read ${Focus.format(d.readingMs)}"
+            val podcasts = if (d.podcastMs > 0) " · Podcasts ${Focus.format(d.podcastMs)}" else ""
             legend.text = (if (d.hasUsage) {
-                "Read ${Focus.format(d.readingMs)} · Work ${Focus.format(d.workMs)} · Scroll ${Focus.format(d.scrollingMs)}"
+                "$read · Work ${Focus.format(d.workMs)} · Scroll ${Focus.format(d.scrollingMs)}$podcasts"
             } else {
-                "Read ${Focus.format(d.readingMs)} · Tap to compare with scrolling"
+                "$read · Tap to compare with scrolling$podcasts"
             }).uppercase()
             total.text = if (d.hasUsage) "${Focus.format(d.totalMs)} on device".uppercase() else ""
             bar.visibility = if (d.hasUsage) View.VISIBLE else View.GONE
@@ -248,6 +251,9 @@ object TimeStats {
         val table = ui.vertical()
         col.addView(table)
         host.showSheet(col)
+        // Returning from Settings after granting usage access rebuilds this sheet, so the
+        // "Allow usage access" button doesn't linger once it's no longer needed.
+        host.sheetRefresh = { sheet(host) }
         // Today, yesterday and the last 7 days, computed in the background.
         val days = arrayOfNulls<Focus.Day>(8)
         var done = 0
@@ -281,6 +287,27 @@ object TimeStats {
                 r.addView(ui.mono(Focus.format(v), 12f, p.text).apply { gravity = Gravity.END }, ui.lp(0, weight = 1f))
             }
             table.addView(r)
+            if (label == "Reading" && (days[0].listeningMs > 0 || days[1].listeningMs > 0 || avg(Focus.Day::listeningMs) > 0)) {
+                val sub = ui.horizontal().apply { setPadding(ui.dp(18), 0, ui.dp(18), ui.dp(10)) }
+                sub.addView(ui.text("↳ Listening", 12.5f, p.soft), ui.lp(0, weight = 1.3f))
+                for (v in listOf(days[0].listeningMs, days[1].listeningMs, avg(Focus.Day::listeningMs))) {
+                    sub.addView(ui.mono(Focus.format(v), 11f, p.soft).apply { gravity = Gravity.END }, ui.lp(0, weight = 1f))
+                }
+                table.addView(sub)
+            }
+            table.addView(ui.rule(soft = true))
+        }
+        if (days[0].podcastMs > 0 || days[1].podcastMs > 0 || avg(Focus.Day::podcastMs) > 0) {
+            val r = ui.horizontal().apply { setPadding(ui.dp(18), ui.dp(10), ui.dp(18), ui.dp(10)) }
+            r.addView(ui.text("Podcasts", 15f), ui.lp(0, weight = 1.3f))
+            for (v in listOf(days[0].podcastMs, days[1].podcastMs, avg(Focus.Day::podcastMs))) {
+                r.addView(ui.mono(Focus.format(v), 12f, p.text).apply { gravity = Gravity.END }, ui.lp(0, weight = 1f))
+            }
+            table.addView(r)
+            table.addView(ui.text(
+                "Kept separate from reading — a podcast isn't the book you were trying to read more of.",
+                12f, p.soft,
+            ).apply { setLineSpacing(0f, 1.2f) }.also { ui.margins(it, 18, 0, 18, 10) })
             table.addView(ui.rule(soft = true))
         }
         val resisted = Focus.resisted(host, 0)

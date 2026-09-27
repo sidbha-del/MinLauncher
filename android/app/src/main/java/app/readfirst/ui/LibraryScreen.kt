@@ -13,13 +13,11 @@ class LibraryScreen(host: HomeActivity) : Screen(host) {
 
     override fun build(): View {
         val lib = host.library
-        val frame = GestureFrame(host).apply { onSwipeLeft = { host.pop() } }
         val col = ui.vertical()
         val count = lib.books.size
         val stack = host.prefs.libraryStack
         val sort = host.prefs.librarySort
-        col.addView(ui.topBar("Library", "", onRight = { host.push(SettingsScreen(host)) },
-            rightIcon = app.readfirst.R.drawable.ic_settings, rightIconLabel = "Settings"))
+        col.addView(ui.topBar("Library", "", right = "Settings", onRight = { host.push(SettingsScreen(host)) }))
         if (count > 0) {
             col.addView(viewSwitch(count, stack))
             col.addView(ui.row("Sort", sort.label) { sortSheet() })
@@ -48,12 +46,7 @@ class LibraryScreen(host: HomeActivity) : Screen(host) {
         }
         otherReadingApps()?.let { content.addView(it) }
         col.addView(ScrollView(host).apply { addView(content) }, ui.lp(h = 0, weight = 1f))
-        col.addView(ui.navBar(
-            "Home →" to { host.goHome() },
-            "Apps ↑" to { host.push(AppsScreen(host)) },
-        ))
-        frame.addView(col)
-        return frame
+        return col
     }
 
     /** Handoff to installed ebook apps (Kindle, Play Books, …): their books live there, so we just open them. */

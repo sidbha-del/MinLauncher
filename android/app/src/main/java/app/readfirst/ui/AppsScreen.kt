@@ -36,8 +36,7 @@ class AppsScreen(host: HomeActivity) : Screen(host) {
     override fun build(): View {
         val col = ui.vertical()
         val all = visibleApps()
-        col.addView(ui.topBar("Apps", "${all.size}", onRight = { host.push(SettingsScreen(host)) },
-            rightIcon = app.readfirst.R.drawable.ic_settings, rightIconLabel = "Settings"))
+        col.addView(ui.topBar("Apps", "${all.size}", right = "Settings", onRight = { host.push(SettingsScreen(host)) }))
 
         val search = EditText(host).apply {
             hint = "SEARCH APPS"
@@ -88,10 +87,6 @@ class AppsScreen(host: HomeActivity) : Screen(host) {
             go
         }
         col.addView(list, ui.lp(h = 0, weight = 1f))
-        col.addView(ui.navBar(
-            "← Library" to { host.push(LibraryScreen(host)) },
-            "Home ↓" to { host.goHome() },
-        ))
         return col
     }
 
@@ -230,10 +225,7 @@ object AppActions {
                 host.dismissSheet()
             })
         } else if (pinned.size < Prefs.MAX_PINS) {
-            col.addView(ui.row("Pin to home", "${pinned.size} / ${Prefs.MAX_PINS} used") {
-                prefs.pinned = pinned + app.key
-                host.dismissSheet()
-            })
+            col.addView(ui.row("Pin to home", "${pinned.size} / ${Prefs.MAX_PINS} used") { Dock.pin(host, app) })
         } else {
             col.addView(ui.row("Pin to home", "Home is full (${Prefs.MAX_PINS})", off = true))
         }
@@ -249,9 +241,15 @@ object AppActions {
             host.dismissSheet()
         })
         val audiobook = NowPlaying.isAudiobookApp(host, pkg)
-        val builtIn = pkg in NowPlaying.AUDIOBOOK_APPS
-        if (!builtIn) col.addView(ui.row(if (audiobook) "Not an audiobook app" else "Audiobook app: listening counts as reading") {
+        val builtInAudiobook = pkg in NowPlaying.AUDIOBOOK_APPS
+        if (!builtInAudiobook) col.addView(ui.row(if (audiobook) "Not an audiobook app" else "Audiobook app: listening counts as reading") {
             prefs.audiobookAdded = if (audiobook) prefs.audiobookAdded - pkg else prefs.audiobookAdded + pkg
+            host.dismissSheet()
+        })
+        val podcast = NowPlaying.isPodcastApp(host, pkg)
+        val builtInPodcast = pkg in NowPlaying.PODCAST_APPS
+        if (!audiobook && !builtInPodcast) col.addView(ui.row(if (podcast) "Not a podcast app" else "Podcast app: shows in Now listening") {
+            prefs.podcastAdded = if (podcast) prefs.podcastAdded - pkg else prefs.podcastAdded + pkg
             host.dismissSheet()
         })
         col.addView(ui.row("Rename") { rename(host, app) })
@@ -270,6 +268,8 @@ object AppActions {
             host.dismissSheet()
             runCatching {
                 host.startActivity(Intent(Intent.ACTION_DELETE, Uri.fromParts("package", app.component.packageName, null)))
+            }.onFailure {
+                Toast.makeText(host, "Can't uninstall ${prefs.label(app.key, app.label)}", Toast.LENGTH_SHORT).show()
             }
         })
         host.showSheet(col)

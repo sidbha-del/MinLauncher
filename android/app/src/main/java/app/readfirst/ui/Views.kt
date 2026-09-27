@@ -14,6 +14,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.TextUtils
 import android.util.LruCache
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import app.readfirst.data.BookEntry
@@ -23,11 +24,29 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-/** Ink-style progress: a row of outlined segments, filled up to the fraction read. */
+/**
+ * Ink-style progress: a row of outlined segments, filled up to the fraction read. Also doubles as
+ * a scrubber: set [onSeek] to make it drag- and tap-to-seek (touch feedback moves [fraction]
+ * live; [onSeek] fires once, on release, with where the finger landed).
+ */
 class SegmentBar(context: Context, private val p: InkPalette, var fraction: Float, private val segments: Int = 20) : View(context) {
     private val d = resources.displayMetrics.density
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = max(1f, d); color = p.text }
     private val fill = Paint().apply { color = p.fill }
+    var onSeek: ((Float) -> Unit)? = null
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val seek = onSeek ?: return super.onTouchEvent(event)
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                fraction = (event.x / width).coerceIn(0f, 1f)
+                invalidate()
+                parent?.requestDisallowInterceptTouchEvent(true)
+            }
+            MotionEvent.ACTION_UP -> seek((event.x / width).coerceIn(0f, 1f))
+        }
+        return true
+    }
 
     override fun onMeasure(w: Int, h: Int) = setMeasuredDimension(MeasureSpec.getSize(w), (8 * d).roundToInt())
 

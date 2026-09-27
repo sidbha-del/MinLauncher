@@ -27,6 +27,11 @@ enum class LibrarySort(val label: String) {
     RECENT("Recent"), TITLE("Title"), AUTHOR("Author"), SUBJECT("Subject")
 }
 
+/** How much Home's status block shows, beyond the clock, which is always shown large. */
+enum class StatusBarStyle(val label: String) {
+    MINIMAL("Minimal"), STANDARD("Standard"), FULL("Full")
+}
+
 /** A page colour plus texture; the launcher has one, and books either share it or have their own. */
 data class PageStyle(val page: Page, val texture: Texture)
 
@@ -93,6 +98,21 @@ class Prefs private constructor(context: Context) {
         get() = enumOr("library_sort", LibrarySort.RECENT)
         set(v) = edit { putString("library_sort", v.name) }
 
+    /** How much Home's status block shows: just the clock, clock+date, or clock+date+alarm+weather. */
+    var statusBarStyle: StatusBarStyle
+        get() = enumOr("status_bar_style", StatusBarStyle.STANDARD)
+        set(v) = edit { putString("status_bar_style", v.name) }
+
+    /** Now-listening skip amount in ms: 15s / 30s / 60s. */
+    var audioSkipMs: Int
+        get() = sp.getInt("audio_skip_ms", 30_000)
+        set(v) = edit { putInt("audio_skip_ms", v) }
+
+    /** Epoch ms the sleep timer should fire at, or 0 if none is set. */
+    var sleepTimerAt: Long
+        get() = sp.getLong("sleep_timer_at", 0L)
+        set(v) = edit { putLong("sleep_timer_at", v) }
+
     /** Now listening: false = audiobook apps only, true = any audio (music, podcasts). */
     var nowPlayingAllAudio: Boolean
         get() = sp.getBoolean("now_playing_all_audio", false)
@@ -136,6 +156,12 @@ class Prefs private constructor(context: Context) {
         get() = readList("audiobook_added").toSet()
         set(v) = edit { putString("audiobook_added", JSONArray(v.sorted()).toString()) }
 
+    /** Apps the user marked as podcast apps: their playback shows in Now listening and is
+     *  tracked separately from reading. */
+    var podcastAdded: Set<String>
+        get() = readList("podcast_added").toSet()
+        set(v) = edit { putString("podcast_added", JSONArray(v.sorted()).toString()) }
+
     /** One-time Home notices the user has closed, by id. */
     var dismissedNotices: Set<String>
         get() = readList("dismissed_notices").toSet()
@@ -149,6 +175,11 @@ class Prefs private constructor(context: Context) {
     var pinned: List<String>
         get() = readList("pinned")
         set(v) = edit { putString("pinned", JSONArray(v.distinct().take(MAX_PINS)).toString()) }
+
+    /** Show the pinned-apps dock on Library and Apps too, not just Home. */
+    var dockEverywhere: Boolean
+        get() = sp.getBoolean("dock_everywhere", false)
+        set(v) = edit { putBoolean("dock_everywhere", v) }
 
     var hidden: Set<String>
         get() = readList("hidden").toSet()
@@ -185,7 +216,7 @@ class Prefs private constructor(context: Context) {
 
     companion object {
         private const val KEY_INK = "ink"
-        const val MAX_PINS = 4
+        const val MAX_PINS = 5
         const val MIN_TEXT = 12
         const val MAX_TEXT = 32
 
