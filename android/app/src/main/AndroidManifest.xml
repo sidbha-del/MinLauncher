@@ -22,6 +22,11 @@
          immediately with no error. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
+    <!-- Tapping the clock opens the clock app's alarm list (SHOW_ALARMS). AOSP's clock, and the
+         clocks built on it, refuse that request from apps that don't hold this; it is a normal
+         permission, granted at install, and ReadFirst never sets an alarm itself. -->
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+
     <!-- Launcher package visibility without QUERY_ALL_PACKAGES. -->
     <queries>
         <intent>
@@ -31,6 +36,10 @@
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.HOME" />
+        </intent>
+        <!-- Which app answers the clock tap, so it can be opened by its icon if it refuses. -->
+        <intent>
+            <action android:name="android.intent.action.SHOW_ALARMS" />
         </intent>
     </queries>
 

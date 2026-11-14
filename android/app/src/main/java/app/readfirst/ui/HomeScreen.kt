@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.BatteryManager
 import android.provider.AlarmClock
@@ -231,8 +232,20 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         return "Alarm " + DateFormat.format(fmt, info.triggerTime)
     }
 
+    /**
+     * The clock app's alarm list. Some clocks refuse SHOW_ALARMS from a caller they don't trust
+     * (AOSP's wants the SET_ALARM permission, others don't export the handler at all), and the
+     * refusal arrives as an exception, not as "no such app". So when it fails, find out who would
+     * have answered and open that app by its icon instead: the clock, one tap from its alarms.
+     */
     private fun openAlarms() {
-        if (!PhoneCheck.open(host, Intent(AlarmClock.ACTION_SHOW_ALARMS))) {
+        val show = Intent(AlarmClock.ACTION_SHOW_ALARMS)
+        if (PhoneCheck.open(host, show)) return
+        val pm = host.packageManager
+        val launch = runCatching { pm.queryIntentActivities(show, PackageManager.MATCH_DEFAULT_ONLY) }.getOrDefault(emptyList())
+            .mapNotNull { it.activityInfo?.packageName }.distinct()
+            .mapNotNull { pkg -> pm.getLaunchIntentForPackage(pkg) }
+        if (!PhoneCheck.open(host, *launch.toTypedArray())) {
             Toast.makeText(host, "No clock app found", Toast.LENGTH_SHORT).show()
         }
     }
