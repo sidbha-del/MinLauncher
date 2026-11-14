@@ -115,6 +115,21 @@
             </intent-filter>
         </service>
 
+        <!-- StandBy, a screen saver for the phone while it charges: clock, date, battery, alarm,
+             weather, timer and the current book. Chosen by the user under Settings → Display →
+             Screen saver; only the system can start it, and it needs no permission of its own. -->
+        <service
+            android:name=".standby.StandbyDream"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/standby_name"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
         <!-- The buttons on the pinned ringer notification; reachable only by ReadFirst itself. -->
         <receiver android:name=".data.RingerNotification$ActionReceiver" android:exported="false" />
 
