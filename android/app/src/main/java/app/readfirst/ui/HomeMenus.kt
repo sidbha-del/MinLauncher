@@ -6,6 +6,7 @@ import android.widget.Toast
 import app.readfirst.HomeActivity
 import app.readfirst.book.Opds
 import app.readfirst.data.Catalogs
+import app.readfirst.data.FlipTimer
 import app.readfirst.data.Ink
 
 /** Long-press on Home: the way to Settings without going through the app list. */
@@ -24,6 +25,11 @@ object HomeMenu {
             host.dismissSheet()
             prefs.toggleInk()
         })
+        // Only where the companion app that keeps the countdown is installed.
+        if (FlipTimer.isAvailable(host)) {
+            val timer = FlipTimer.cached
+            col.addView(ui.row("Timer", if (timer.active) timer.line() else "Reading or leisure") { TimerSheet.show(host) })
+        }
         col.addView(ui.row("Add books") { AddBooks.show(host) })
         col.addView(ui.row("Free classics", "One tap") { Starter.show(host) })
         host.showSheet(col)

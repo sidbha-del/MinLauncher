@@ -7,6 +7,8 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.BatteryManager
+import android.os.Handler
+import android.os.Looper
 import android.provider.AlarmClock
 import android.provider.Settings
 import android.text.TextUtils
@@ -21,6 +23,7 @@ import android.widget.Toast
 import app.readfirst.HomeActivity
 import app.readfirst.book.Progress
 import app.readfirst.data.BookEntry
+import app.readfirst.data.FlipTimer
 import app.readfirst.data.NowPlaying
 import app.readfirst.data.PhoneCheck
 import app.readfirst.data.Ringer
@@ -36,6 +39,7 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
     private var date: TextView? = null
     private var battery: TextView? = null
     private var ringer: TextView? = null
+    private var timer: TextView? = null
     private var weatherLabel: TextView? = null
     private var alarmLabel: TextView? = null
 
@@ -67,6 +71,10 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         root.addView(frame, ui.lp(h = 0, weight = 1f))
         root.addView(TimeStats.homeBlock(host))
         return root
+    }
+
+    override fun onHide() {
+        ticker.removeCallbacks(timerTick)
     }
 
     override fun onTimeTick() {
@@ -192,6 +200,19 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         ui.tappable(battery!!, { openBatterySettings() })
         glance.addView(battery, wrap())
         side.addView(glance, wrap())
+        // The reading / leisure timer, kept by a companion app; no label where that isn't installed.
+        timer = if (FlipTimer.isAvailable(host)) ui.mono("", 13f, p.soft).apply {
+            setPadding(ui.dp(10), ui.dp(5), 0, ui.dp(5))
+            maxLines = 1
+            ui.tappable(this, { TimerSheet.show(host) })
+            addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) = startTimerTick()
+                override fun onViewDetachedFromWindow(v: View) { if (timer === v) ticker.removeCallbacks(timerTick) }
+            })
+            side.addView(this, wrap())
+        } else null
+        // The label draws from what was last heard; ask again, since the timer moves on by itself.
+        if (timer != null) FlipTimer.refresh(host) { startTimerTick() }
         timeRow.addView(side, wrap())
         col.addView(timeRow)
 
@@ -249,6 +270,35 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         val mode = Ringer.mode(host)
         label.text = mode.short
         label.contentDescription = "Ringer: ${mode.label}. Tap to change."
+    }
+
+    private val ticker = Handler(Looper.getMainLooper())
+    private var timerPolls = 0
+
+    /**
+     * Home's timer label: TIMER when nothing is set, else what is counting down (READ 18:42).
+     * It redraws once a second, but only while a timer is armed or running and only while Home
+     * is on screen; the rebuild on every return to Home starts it again. One chain at a time:
+     * [startTimerTick] always cancels the last before starting.
+     */
+    private val timerTick = object : Runnable {
+        override fun run() {
+            val label = timer ?: return
+            val s = FlipTimer.cached
+            label.text = s.line()
+            label.contentDescription = if (s.active) "Timer: ${s.line()}. Tap to stop." else "Timer. Tap to set."
+            if (!s.active || !host.isVisible || !label.isAttachedToWindow) return
+            // Waiting on TorchLevels (to be flipped, to stop ringing, to say it has finished):
+            // only it knows when that happens, so ask every few seconds.
+            val waiting = s.phase != FlipTimer.Phase.RUNNING || s.remainingMs() == 0L
+            if (waiting && ++timerPolls % 3 == 0) FlipTimer.refresh(host) { startTimerTick() }
+            ticker.postDelayed(this, if (waiting) 1000L else s.remainingMs() % 1000 + 20)
+        }
+    }
+
+    private fun startTimerTick() {
+        ticker.removeCallbacks(timerTick)
+        timerTick.run()
     }
 
     private fun nextAlarmText(): String? {

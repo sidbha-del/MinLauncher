@@ -57,6 +57,8 @@ class HomeActivity : Activity() {
     private var lastScan = 0L
     private var rebuildPosted = false
     private var visible = false
+    /** Between onResume and onPause: what a once-a-second countdown checks before it carries on. */
+    val isVisible: Boolean get() = visible
 
     private val onPrefs: () -> Unit = { scheduleRebuild(inkMayChange = true) }
     private val onLibrary: () -> Unit = { scheduleRebuild() }

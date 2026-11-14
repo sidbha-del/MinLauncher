@@ -125,6 +125,15 @@ class Prefs private constructor(context: Context) {
         get() = sp.getBoolean("ringer_access_asked", false)
         set(v) = edit { putBoolean("ringer_access_asked", v) }
 
+    /** What the timer was last used for ("Reading" or "Leisure") and for how long, so the sheet
+     *  opens on the same choice. See [FlipTimer]. */
+    var timerLabel: String
+        get() = sp.getString("timer_label", FlipTimer.READING) ?: FlipTimer.READING
+        set(v) = edit { putString("timer_label", v) }
+    var timerMinutes: Int
+        get() = sp.getInt("timer_minutes", 25)
+        set(v) = edit { putInt("timer_minutes", v) }
+
     /** Now listening: false = audiobook apps only, true = any audio (music, podcasts). */
     var nowPlayingAllAudio: Boolean
         get() = sp.getBoolean("now_playing_all_audio", false)

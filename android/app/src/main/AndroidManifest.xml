@@ -54,6 +54,10 @@
         <intent>
             <action android:name="android.intent.action.SHOW_ALARMS" />
         </intent>
+        <!-- TorchLevels, the companion app that keeps the reading timer's countdown, where it
+             is installed (see data/FlipTimer.kt). Nothing is assumed where it isn't. -->
+        <package android:name="dev.m42.torchlevels" />
+        <provider android:authorities="dev.m42.torchlevels.timer" />
     </queries>
 
     <application
