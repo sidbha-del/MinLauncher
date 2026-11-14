@@ -113,6 +113,18 @@ class Prefs private constructor(context: Context) {
         get() = sp.getLong("sleep_timer_at", 0L)
         set(v) = edit { putLong("sleep_timer_at", v) }
 
+    /** Keep Ring / Vibrate / Silent buttons pinned in the notification shade. Off until asked for:
+     *  an update must not start posting notifications for people who never wanted one. */
+    var ringerNotification: Boolean
+        get() = sp.getBoolean("ringer_notification", false)
+        set(v) = edit { putBoolean("ringer_notification", v) }
+
+    /** The ringer control has already sent the user to Do Not Disturb access once for Silent;
+     *  it doesn't do so again on every pass round the cycle (see [Ringer.step]). */
+    var ringerAccessAsked: Boolean
+        get() = sp.getBoolean("ringer_access_asked", false)
+        set(v) = edit { putBoolean("ringer_access_asked", v) }
+
     /** Now listening: false = audiobook apps only, true = any audio (music, podcasts). */
     var nowPlayingAllAudio: Boolean
         get() = sp.getBoolean("now_playing_all_audio", false)

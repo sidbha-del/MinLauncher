@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ringer on: a solid bell. Tinted by whoever shows it (tile, notification). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11,3 H13 V5.1 C15.9,5.6 18,8 18,11 V16.5 L20,18.5 V19.5 H4 V18.5 L6,16.5 V11 C6,8 8.1,5.6 11,5.1 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10,20.5 H14 C14,21.6 13.1,22.5 12,22.5 C10.9,22.5 10,21.6 10,20.5 Z" />
+</vector>

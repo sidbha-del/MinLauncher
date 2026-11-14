@@ -23,6 +23,7 @@ import app.readfirst.book.Progress
 import app.readfirst.data.BookEntry
 import app.readfirst.data.NowPlaying
 import app.readfirst.data.PhoneCheck
+import app.readfirst.data.Ringer
 import app.readfirst.data.StatusBarStyle
 import app.readfirst.data.Weather
 import java.util.Date
@@ -34,6 +35,7 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
     private var clock: TextView? = null
     private var date: TextView? = null
     private var battery: TextView? = null
+    private var ringer: TextView? = null
     private var weatherLabel: TextView? = null
     private var alarmLabel: TextView? = null
 
@@ -174,9 +176,23 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         clock = ui.serif("", 40f, bold = true).apply { includeFontPadding = false }
         ui.tappable(clock!!, { openAlarms() })
         timeRow.addView(clock, ui.lp(0, weight = 1f))
+        // Beside the clock: the small things you glance at or flick, right-aligned in a column
+        // so a second line can sit under the first without pushing the clock about.
+        val wrap = { LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT) }
+        val side = ui.vertical().apply { gravity = Gravity.END }
+        val glance = ui.horizontal().apply { gravity = Gravity.CENTER_VERTICAL }
+        // The ringer, one tap per step: ring → vibrate → silent. Padded, since the word is small.
+        ringer = ui.mono("", 13f, p.soft).apply { setPadding(ui.dp(10), ui.dp(5), ui.dp(10), ui.dp(5)) }
+        ui.tappable(ringer!!, {
+            Ringer.cycle(host)
+            updateRinger()
+        })
+        glance.addView(ringer, wrap())
         battery = ui.mono("", 13f, p.soft)
         ui.tappable(battery!!, { openBatterySettings() })
-        timeRow.addView(battery, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        glance.addView(battery, wrap())
+        side.addView(glance, wrap())
+        timeRow.addView(side, wrap())
         col.addView(timeRow)
 
         if (style != StatusBarStyle.MINIMAL) {
@@ -213,6 +229,7 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         clock?.text = DateFormat.format(if (DateFormat.is24HourFormat(host)) "HH:mm" else "h:mm", now)
         date?.text = DateFormat.format("EEE d MMM", now).toString().uppercase(Locale.getDefault())
         battery?.text = batteryPercent(host)?.let { "$it%" } ?: ""
+        updateRinger()
         alarmLabel?.let { label ->
             val text = nextAlarmText()
             label.text = text ?: ""
@@ -224,6 +241,14 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
                 label.visibility = if (state == null) View.GONE else View.VISIBLE
             }
         }
+    }
+
+    /** Also called when the mode changes elsewhere (volume keys, the tile): see [HomeActivity]. */
+    private fun updateRinger() {
+        val label = ringer ?: return
+        val mode = Ringer.mode(host)
+        label.text = mode.short
+        label.contentDescription = "Ringer: ${mode.label}. Tap to change."
     }
 
     private fun nextAlarmText(): String? {

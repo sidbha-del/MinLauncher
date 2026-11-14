@@ -20,6 +20,8 @@ import app.readfirst.data.BookEntry
 import app.readfirst.data.Library
 import app.readfirst.data.NowPlaying
 import app.readfirst.data.Prefs
+import app.readfirst.data.Ringer
+import app.readfirst.data.RingerNotification
 import app.readfirst.data.Scanner
 import app.readfirst.reader.ReaderActivity
 import app.readfirst.ui.InkPalette
@@ -153,8 +155,14 @@ class HomeActivity : Activity() {
         }
     }
 
+    /** While Home shows, a ringer change made anywhere (volume keys, the tile, the notification)
+     *  reaches the status label at once, the same way the minute tick reaches the clock. */
+    private var ringerWatch: BroadcastReceiver? = null
+
     override fun onPause() {
         visible = false
+        ringerWatch?.let { runCatching { unregisterReceiver(it) } }
+        ringerWatch = null
         NowPlaying.get(this).stop()
         app.readfirst.widget.ReadingWidget.updateAll(this)
         super.onPause()
@@ -163,6 +171,7 @@ class HomeActivity : Activity() {
     override fun onResume() {
         super.onResume()
         visible = true
+        if (ringerWatch == null) ringerWatch = runCatching { Ringer.watch(this) { stack.lastOrNull()?.onTimeTick() } }.getOrNull()
         NowPlaying.get(this).start(onNowPlaying)
         // Reading position, progress and ink may have changed while the reader was open.
         if (lookChanged()) {
@@ -353,6 +362,12 @@ class HomeActivity : Activity() {
     }
 
     // ---- system -------------------------------------------------------------------------------
+
+    /** The only runtime permission the app asks for: notifications, for the pinned ringer buttons. */
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        RingerNotification.onPermissionResult(this, requestCode, grantResults)
+    }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {

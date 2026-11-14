@@ -13,6 +13,8 @@ import app.readfirst.data.HomeRole
 import app.readfirst.data.Ink
 import app.readfirst.data.NowPlaying
 import app.readfirst.data.Prefs
+import app.readfirst.data.Ringer
+import app.readfirst.data.RingerNotification
 
 /** Settings: ink, home-screen role, pinned and hidden apps, book folders. */
 class SettingsScreen(host: HomeActivity) : Screen(host) {
@@ -106,6 +108,20 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
             if (!HomeRole.openOtherLauncherOnce(host)) Toast.makeText(host, "No other home app found", Toast.LENGTH_SHORT).show()
         })
         if (isDefault) list.addView(ui.row("Switch back to previous launcher") { HomeRole.switchBackToStock(host) })
+
+        list.addView(ui.group("Ringer"))
+        list.addView(ui.row("Ringer buttons in notifications", if (prefs.ringerNotification) "On" else "Off") {
+            RingerNotification.setEnabled(host, !prefs.ringerNotification)
+        })
+        list.addView(ui.row("Silent mode", if (Ringer.hasAccess(host)) "Allowed" else "Allow access") {
+            if (!Ringer.openAccessSettings(host)) Toast.makeText(host, "Open Settings → Do Not Disturb access to allow ReadFirst", Toast.LENGTH_LONG).show()
+        })
+        list.addView(ui.text(
+            "Tap RING beside the clock on Home to step through ring, vibrate and silent; the same control can be added " +
+                "to quick settings as a tile. The notification keeps all three as buttons in the shade and on the lock screen. " +
+                "Android only lets an app switch Silent on or off with Do Not Disturb access, and treats Silent as Do Not Disturb.",
+            13f, p.soft,
+        ).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 10, 18, 6) })
 
         list.addView(ui.group("Library & apps"))
         list.addView(ui.row("Book folders", "${host.library.folders.size}") { foldersSheet() })

@@ -27,6 +27,19 @@
          permission, granted at install, and ReadFirst never sets an alarm itself. -->
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
 
+    <!-- The ringer control (Home's RING / VIB / SILENT label, the quick-settings tile, the
+         notification buttons). Android lets an app switch Silent on or off only with Do Not
+         Disturb access; declaring this is what lists ReadFirst on that settings page, where the
+         user grants it. Ring and vibrate work without it. -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
+    <!-- The optional pinned notification with Ring / Vibrate / Silent buttons. Off by default,
+         and only asked for at the moment it is switched on in Settings, never at startup. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Puts that notification back after the phone restarts. Does nothing while it is off. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <!-- Launcher package visibility without QUERY_ALL_PACKAGES. -->
     <queries>
         <intent>
@@ -44,7 +57,7 @@
     </queries>
 
     <application
-        
+        android:name=".ReadFirstApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
@@ -85,6 +98,30 @@
 
         <!-- Fires the audiobook sleep timer; inexact, so it needs no special permission. -->
         <receiver android:name=".data.SleepTimer$Receiver" android:exported="false" />
+
+        <!-- Quick-settings tile: each tap moves the ringer on, ring → vibrate → silent. -->
+        <service
+            android:name=".data.RingerTile"
+            android:exported="true"
+            android:icon="@drawable/ic_ringer_ring"
+            android:label="@string/ringer_tile"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- The buttons on the pinned ringer notification; reachable only by ReadFirst itself. -->
+        <receiver android:name=".data.RingerNotification$ActionReceiver" android:exported="false" />
+
+        <!-- Re-posts that notification after a restart or an update. Not exported: the system
+             may still deliver these to it, other apps may not. -->
+        <receiver android:name=".data.RingerNotification$BootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- The companion widget for people who keep their own home screen. -->
         <receiver

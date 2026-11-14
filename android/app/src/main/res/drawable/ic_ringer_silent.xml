@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Silent: the bell in outline, struck through. An outline, because a line across a solid bell
+     of the same colour would not show. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"
+        android:pathData="M12,5.8 C14.9,5.8 17.2,8.1 17.2,11 V16.8 L19,18.7 H5 L6.8,16.8 V11 C6.8,8.1 9.1,5.8 12,5.8 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10,20.5 H14 C14,21.6 13.1,22.5 12,22.5 C10.9,22.5 10,21.6 10,20.5 Z" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M4,3.5 L20.5,21" />
+</vector>
