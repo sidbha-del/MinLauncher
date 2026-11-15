@@ -87,6 +87,29 @@ object FlipTimer {
 
     fun cancel(context: Context): Boolean = call(context, "cancel", null)?.getBoolean("ok", false) == true
 
+    /** Where the ringer slider sits: the side and how far down (percent). TorchLevels keeps it, so the lock-screen
+     *  slider and this one always agree. */
+    data class SliderPlace(val left: Boolean, val pos: Int)
+
+    /** Asks TorchLevels where the slider goes, off the main thread; [done] runs on the main thread, with null if it
+     *  isn't there or won't say. */
+    fun fetchSliderPlace(context: Context, done: (SliderPlace?) -> Unit) {
+        val app = context.applicationContext
+        worker.execute {
+            val place = if (!isAvailable(app)) null else call(app, "slider", null)?.takeIf { it.getBoolean("ok", false) }
+                ?.let { SliderPlace(it.getBoolean("left", false), it.getInt("pos", 34).coerceIn(0, 100)) }
+            main.post { done(place) }
+        }
+    }
+
+    /** Tells TorchLevels the place chosen in ReadFirst's Settings, off the main thread. Silent if it isn't there. */
+    fun pushSliderPlace(context: Context, left: Boolean, pos: Int) {
+        val app = context.applicationContext
+        worker.execute {
+            if (isAvailable(app)) call(app, "setSlider", Bundle().apply { putBoolean("left", left); putInt("pos", pos) })
+        }
+    }
+
     /** What the timer is doing now, or null if TorchLevels couldn't be asked. Blocking. */
     fun state(context: Context): State? {
         val b = call(context, "state", null) ?: return null

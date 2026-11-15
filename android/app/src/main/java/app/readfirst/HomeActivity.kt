@@ -184,6 +184,15 @@ class HomeActivity : Activity() {
         // Only what actually changed is rebuilt: coming back from the reader or a settings page
         // with nothing new to show keeps the views, so Home does not flash or lose its place.
         if (sheet == null) { if (restyled) rebuild() else refreshIfChanged() } else sheetRefresh?.invoke()
+        // The ringer slider's side and height are kept by TorchLevels (shared with its lock-screen slider): adopt
+        // what it says, and rebuild Home only if that is not what we are showing.
+        app.readfirst.data.FlipTimer.fetchSliderPlace(this) { place ->
+            if (place != null && (place.left != prefs.ringerSliderLeft || place.pos != prefs.ringerSliderPos)) {
+                prefs.ringerSliderLeft = place.left
+                prefs.ringerSliderPos = place.pos
+                if (visible) scheduleRebuild()
+            }
+        }
         if (SystemClock.elapsedRealtime() - lastScan > 5 * 60_000L) {
             lastScan = SystemClock.elapsedRealtime()
             Scanner.refresh(this)

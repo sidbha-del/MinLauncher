@@ -59,11 +59,13 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
         })
         list.addView(ui.setting("Slider side", value = if (prefs.ringerSliderLeft) "Left" else "Right") {
             prefs.ringerSliderLeft = !prefs.ringerSliderLeft
+            app.readfirst.data.FlipTimer.pushSliderPlace(host, prefs.ringerSliderLeft, prefs.ringerSliderPos)
         })
         val heights = listOf(10 to "Top", 22 to "Upper", 34 to "Default", 50 to "Middle", 65 to "Lower", 78 to "Bottom")
         list.addView(ui.setting("Slider height", value = heights.minByOrNull { kotlin.math.abs(it.first - prefs.ringerSliderPos) }!!.second) {
             val i = heights.indexOfFirst { it.first == heights.minByOrNull { h -> kotlin.math.abs(h.first - prefs.ringerSliderPos) }!!.first }
             prefs.ringerSliderPos = heights[(i + 1) % heights.size].first
+            app.readfirst.data.FlipTimer.pushSliderPlace(host, prefs.ringerSliderLeft, prefs.ringerSliderPos)
         })
         list.addView(ui.switchSetting("Ringer in notifications", "Ring, vibrate, silent buttons", prefs.ringerNotification) {
             RingerNotification.setEnabled(host, it)
