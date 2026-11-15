@@ -53,8 +53,8 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
     /** Side margin, in dp, of the content: 24 (the grid's gutter). Blocks that run under the ringer
      *  slider's reach keep a wider margin on the right so nothing meets its knob. */
     private val gutter = 24
-    private val endGutter get() = if (host.prefs.ringerSlider && !host.prefs.ringerSliderLeft) 48 else gutter
-    private val startGutter get() = if (host.prefs.ringerSlider && host.prefs.ringerSliderLeft) 48 else gutter
+    private val endGutter get() = if (host.prefs.ringerSlider && !host.prefs.ringerSliderLeft) 72 else gutter
+    private val startGutter get() = if (host.prefs.ringerSlider && host.prefs.ringerSliderLeft) 72 else gutter
 
     override fun build(): View {
         val frame = GestureFrame(host).apply {
@@ -89,7 +89,10 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
             ringerSlider = slider
             root.addView(slider, FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
-                (if (host.prefs.ringerSliderLeft) Gravity.START else Gravity.END) or Gravity.TOP))
+                (if (host.prefs.ringerSliderLeft) Gravity.START else Gravity.END) or Gravity.TOP).apply {
+                marginStart = ui.dp(4)
+                marginEnd = ui.dp(4)
+            })
             root.addOnLayoutChangeListener { _, _, t, _, b, _, _, _, _ ->
                 val h = (b - t).toFloat()
                 slider.translationY = minOf(h * host.prefs.ringerSliderPos / 100f, h - slider.measuredHeight - ui.dp(8)).coerceAtLeast(0f)

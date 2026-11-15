@@ -33,7 +33,7 @@ class RingerSlider(private val host: HomeActivity) : View(host) {
     private val left = host.prefs.ringerSliderLeft
     private val hasVibrator = Ringer.hasVibrator(host)
     private val count = RingerNotches.count(hasVibrator)
-    private val notchPx = 56f * d
+    private val notchPx = 64f * d
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -64,7 +64,7 @@ class RingerSlider(private val host: HomeActivity) : View(host) {
     }
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
-        setMeasuredDimension((44f * d).toInt(), (count * notchPx).toInt())
+        setMeasuredDimension((64f * d).toInt(), (count * notchPx).toInt())
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
@@ -80,7 +80,7 @@ class RingerSlider(private val host: HomeActivity) : View(host) {
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 // The sliver on the screen-edge side is not ours: it belongs to the page beneath.
-                if (if (left) ev.x < width - 34f * d else ev.x > 34f * d) return false
+                if (if (left) ev.x < 12f * d else ev.x > width - 12f * d) return false
                 parent?.requestDisallowInterceptTouchEvent(true)
                 mover?.cancel()
                 dragging = true
@@ -198,65 +198,65 @@ class RingerSlider(private val host: HomeActivity) : View(host) {
 
     // ---- drawing ------------------------------------------------------------------------------
 
+    private val strip = RectF()
+    private val glyphPath = android.graphics.Path()
+
     override fun onDraw(canvas: Canvas) {
-        val trackX = if (left) 14f * d else width - 14f * d
-        val glyphDx = if (left) 20f * d else -20f * d
+        // The same look as the lock-screen slider: a dark translucent strip, white strokes, and a black knob
+        // with a white ring that shows the current mode.
+        val trackX = if (left) 22f * d else width - 22f * d
+        val iconX = if (left) width - 22f * d else 22f * d
         val shown = if (dragging) RingerNotches.nearest(knobY, notchPx, count) else notch
         val top = RingerNotches.centerY(0, notchPx)
         val bottom = RingerNotches.centerY(count - 1, notchPx)
 
-        stroke.color = if (p.isBlack) p.rule else p.ruleSoft
-        stroke.strokeWidth = 2f * d
-        canvas.drawLine(trackX, top, trackX, bottom, stroke)
+        fill.style = Paint.Style.FILL
+        fill.color = 0x66000000
+        strip.set(0f, 0f, width.toFloat(), height.toFloat())
+        canvas.drawRoundRect(strip, 22f * d, 22f * d, fill)
 
-        stroke.color = p.soft
-        stroke.strokeWidth = 1.5f * d
+        stroke.color = 0xFFFFFFFF.toInt()
+        stroke.strokeWidth = 1.6f * d
+        canvas.drawLine(trackX, top, trackX, bottom, stroke)
         for (i in 0 until count) {
             val y = RingerNotches.centerY(i, notchPx)
-            canvas.drawLine(trackX - 4f * d, y, trackX + 4f * d, y, stroke)
+            canvas.drawLine(trackX - 5f * d, y, trackX + 5f * d, y, stroke)
         }
 
         for (i in 0 until count) {
             val kind = RingerNotches.modeIndex(i, hasVibrator)
-            val quiet = kind == RingerNotches.SILENT && !access
-            stroke.color = if (i == shown && !quiet) p.text else p.soft
-            stroke.strokeWidth = 1.5f * d
-            glyph(canvas, kind, trackX + glyphDx, RingerNotches.centerY(i, notchPx))
+            if (i != shown || dragging) glyph(canvas, kind, iconX, RingerNotches.centerY(i, notchPx), 8f * d)
         }
 
-        val r = 11f * d
-        val silent = RingerNotches.modeIndex(shown, hasVibrator) == RingerNotches.SILENT
-        if (silent && p.isBlack) {
-            fill.color = p.bg; fill.style = Paint.Style.FILL
-            canvas.drawCircle(trackX, knobY, r, fill)
-            stroke.color = p.text; stroke.strokeWidth = 1.5f * d
-            canvas.drawCircle(trackX, knobY, r - 0.75f * d, stroke)
-            canvas.drawLine(trackX - 5f * d, knobY + 5f * d, trackX + 5f * d, knobY - 5f * d, stroke)
-        } else {
-            fill.style = Paint.Style.FILL
-            fill.color = if (silent) p.warn else p.text
-            canvas.drawCircle(trackX, knobY, r, fill)
-        }
+        fill.color = 0xFF000000.toInt()
+        canvas.drawCircle(trackX, knobY, 15f * d, fill)
+        stroke.strokeWidth = 2f * d
+        canvas.drawCircle(trackX, knobY, 15f * d, stroke)
+        glyph(canvas, RingerNotches.modeIndex(shown, hasVibrator), trackX, knobY, 8f * d)
     }
 
-    /** Ten-dp strokes: a bell, three short bars, a circle with a slash. */
-    private fun glyph(canvas: Canvas, kind: Int, cx: Float, cy: Float) {
+    /** A bell, three short bars, or a circle with a slash: white strokes, [r] is the half-size. */
+    private fun glyph(canvas: Canvas, kind: Int, cx: Float, cy: Float, r: Float) {
+        stroke.color = 0xFFFFFFFF.toInt()
+        stroke.strokeWidth = 1.7f * d
         when (kind) {
             RingerNotches.RING -> {
-                canvas.drawArc(RectF(cx - 4f * d, cy - 5f * d, cx + 4f * d, cy + 3f * d), 180f, 180f, false, stroke)
-                canvas.drawLine(cx - 4f * d, cy - 1f * d, cx - 5f * d, cy + 3f * d, stroke)
-                canvas.drawLine(cx + 4f * d, cy - 1f * d, cx + 5f * d, cy + 3f * d, stroke)
-                canvas.drawLine(cx - 5f * d, cy + 3f * d, cx + 5f * d, cy + 3f * d, stroke)
-                canvas.drawPoint(cx, cy + 5f * d, stroke)
+                glyphPath.reset()
+                glyphPath.moveTo(cx - r * 0.7f, cy + r * 0.35f)
+                glyphPath.cubicTo(cx - r * 0.7f, cy - r * 1.1f, cx + r * 0.7f, cy - r * 1.1f, cx + r * 0.7f, cy + r * 0.35f)
+                glyphPath.lineTo(cx - r * 0.7f, cy + r * 0.35f)
+                glyphPath.moveTo(cx - r * 0.2f, cy + r * 0.75f)
+                glyphPath.lineTo(cx + r * 0.2f, cy + r * 0.75f)
+                canvas.drawPath(glyphPath, stroke)
             }
             RingerNotches.VIBRATE -> {
-                canvas.drawLine(cx - 4f * d, cy - 3f * d, cx - 4f * d, cy + 3f * d, stroke)
-                canvas.drawLine(cx, cy - 5f * d, cx, cy + 5f * d, stroke)
-                canvas.drawLine(cx + 4f * d, cy - 3f * d, cx + 4f * d, cy + 3f * d, stroke)
+                canvas.drawLine(cx - r * 0.7f, cy - r * 0.2f, cx - r * 0.7f, cy + r * 0.2f, stroke)
+                canvas.drawLine(cx, cy - r * 0.7f, cx, cy + r * 0.7f, stroke)
+                canvas.drawLine(cx + r * 0.7f, cy - r * 0.2f, cx + r * 0.7f, cy + r * 0.2f, stroke)
             }
             else -> {
-                canvas.drawCircle(cx, cy, 4.5f * d, stroke)
-                canvas.drawLine(cx - 4f * d, cy + 4f * d, cx + 4f * d, cy - 4f * d, stroke)
+                canvas.drawCircle(cx, cy, r * 0.9f, stroke)
+                canvas.drawLine(cx - r * 0.65f, cy + r * 0.65f, cx + r * 0.65f, cy - r * 0.65f, stroke)
             }
         }
     }

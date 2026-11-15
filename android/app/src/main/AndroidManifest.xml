@@ -156,6 +156,14 @@
         </receiver>
 
         <activity
+            android:name=".BookToggleActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="" />
+
+        <activity
             android:name=".reader.ReaderActivity"
             android:exported="false"
             android:theme="@style/Theme.Book.Reader"

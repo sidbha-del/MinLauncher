@@ -96,10 +96,12 @@ class ReaderActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        showing = this
         readingTimer.start()
     }
 
     override fun onPause() {
+        if (showing === this) showing = null
         super.onPause()
         readingTimer.stop()
         save()
@@ -691,6 +693,9 @@ class ReaderActivity : Activity() {
 
     companion object {
         const val EXTRA_ID = "book_id"
+
+        /** The reader in front right now, if any: lets [app.readfirst.BookToggleActivity] close it. */
+        @Volatile var showing: ReaderActivity? = null
         private val MARGINS = intArrayOf(12, 20, 30, 42)
         private val loader = Executors.newSingleThreadExecutor()
     }
