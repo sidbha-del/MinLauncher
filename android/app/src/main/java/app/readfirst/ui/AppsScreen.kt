@@ -57,7 +57,11 @@ class AppsScreen(host: HomeActivity) : Screen(host) {
         val list = ListView(host).apply {
             divider = null
             selector = ui.tapBackground()
-            isFastScrollEnabled = true
+            // The A-Z strip below replaces the system's own fast-scroll thumb; the labels keep
+            // clear of the strip's letters.
+            isFastScrollEnabled = false
+            clipToPadding = false
+            setPaddingRelative(0, 0, ui.dp(44), 0)
             isVerticalScrollBarEnabled = false
             this.adapter = adapter
             setOnItemClickListener { _, _, pos, _ -> (adapter.getItem(pos) as? AppCatalog.Entry)?.let { launch(it) } }
@@ -71,6 +75,41 @@ class AppsScreen(host: HomeActivity) : Screen(host) {
                 }
                 override fun onScroll(v: AbsListView, first: Int, visible: Int, total: Int) {}
             })
+        }
+        val strip = AlphaStrip(host, p)
+        val bubble = TextView(host).apply {
+            typeface = Fonts.serifBold
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 32f)
+            setTextColor(p.text)
+            gravity = Gravity.CENTER
+            includeFontPadding = false
+            background = ui.box(p.bg)
+            visibility = View.GONE
+        }
+        val listFrame = android.widget.FrameLayout(host)
+        listFrame.addView(list, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        listFrame.addView(strip, android.widget.FrameLayout.LayoutParams(ui.dp(56), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.END))
+        listFrame.addView(bubble, android.widget.FrameLayout.LayoutParams(ui.dp(64), ui.dp(64), Gravity.START or Gravity.TOP))
+        var stripRows: List<Int> = emptyList()
+        adapter.onSections = { sections, starts, appCount ->
+            val s = AlphaIndex.build(sections, starts)
+            stripRows = s.rows
+            strip.setLetters(s.letters)
+            // Only where it helps: a long list, not mid-search.
+            strip.visibility = if (appCount >= MIN_APPS_FOR_STRIP && s.letters.isNotEmpty()) View.VISIBLE else View.GONE
+        }
+        strip.onTouchStart = { hideKeyboard(search) }
+        strip.onSelect = { index, y ->
+            if (index < 0) {
+                bubble.visibility = View.GONE
+            } else {
+                stripRows.getOrNull(index)?.let { list.setSelectionFromTop(it, 0) }
+                bubble.text = strip.letterAt(index)
+                bubble.visibility = View.VISIBLE
+                val size = ui.dp(64)
+                bubble.translationX = (listFrame.width - ui.dp(56) - ui.dp(16) - size).toFloat()
+                bubble.translationY = (y - size / 2f).coerceIn(0f, (listFrame.height - size).coerceAtLeast(0).toFloat())
+            }
         }
         adapter.submit(all)
         search.addTextChangedListener(object : TextWatcher {
@@ -86,8 +125,12 @@ class AppsScreen(host: HomeActivity) : Screen(host) {
             if (go) filter(all, query).firstOrNull()?.let { launch(it) }
             go
         }
-        col.addView(list, ui.lp(h = 0, weight = 1f))
+        col.addView(listFrame, ui.lp(h = 0, weight = 1f))
         return col
+    }
+
+    private companion object {
+        const val MIN_APPS_FOR_STRIP = 20
     }
 
     override fun onHide() {
@@ -133,6 +176,7 @@ class AppsScreen(host: HomeActivity) : Screen(host) {
         private var sections: Array<String> = emptyArray()
         private var sectionStart: IntArray = IntArray(0)
         private val iconSize = ui.dp(30)
+        var onSections: ((List<String>, List<Int>, Int) -> Unit)? = null
 
         fun submit(apps: List<AppCatalog.Entry>) {
             val out = ArrayList<Any>()
@@ -153,6 +197,7 @@ class AppsScreen(host: HomeActivity) : Screen(host) {
             rows = out
             sections = secs.toTypedArray()
             sectionStart = starts.toIntArray()
+            onSections?.invoke(secs, starts, apps.size)
             notifyDataSetChanged()
         }
 
