@@ -87,7 +87,7 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
         // ---- Focus ---------------------------------------------------------------------------
         list.addView(ui.section("Focus"))
         val paused = app.readfirst.data.Focus.distracting(prefs, host.catalog).size
-        list.addView(ui.setting("Pause before apps", value = if (prefs.pauseEnabled) "$paused apps" else "Off") {
+        list.addView(ui.setting("Pause before apps", value = if (prefs.pauseEnabled) (if (paused == 1) "1 app" else "$paused apps") else "Off") {
             host.push(FocusAppsScreen(host))
         })
         val usage = app.readfirst.data.Focus.hasUsageAccess(host)
