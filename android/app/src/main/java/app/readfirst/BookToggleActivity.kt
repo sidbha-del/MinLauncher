@@ -20,10 +20,15 @@ class BookToggleActivity : Activity() {
         // behind other things is closed too, and the last book opened afresh in front.
         val inFront = reader != null && (ReaderActivity.resumed || SystemClock.elapsedRealtime() - ReaderActivity.pausedAt < 2500)
         reader?.finish()
-        if (!inFront) {
-            Library.get(this).current()?.let {
-                startActivity(Intent(this, ReaderActivity::class.java).putExtra(ReaderActivity.EXTRA_ID, it.id))
-            }
+        // Home goes to the front first, so the book always opens on top of it and closing it lands there: the
+        // launcher screen the reading started from, not whatever app happened to be underneath.
+        val home = Intent(this, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        val book = if (inFront) null else Library.get(this).current()
+        if (book != null) {
+            val read = Intent(this, ReaderActivity::class.java).putExtra(ReaderActivity.EXTRA_ID, book.id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivities(arrayOf(home, read))
+        } else {
+            startActivity(home)
         }
         finish()
     }
