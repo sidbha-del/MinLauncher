@@ -135,6 +135,16 @@ class Prefs private constructor(context: Context) {
         get() = sp.getBoolean("ringer_slider", true)
         set(v) = edit { putBoolean("ringer_slider", v) }
 
+    /** Which edge the ringer slider sits on: false = right (the default), true = left. */
+    var ringerSliderLeft: Boolean
+        get() = sp.getBoolean("ringer_slider_left", false)
+        set(v) = edit { putBoolean("ringer_slider_left", v) }
+
+    /** How far down Home the ringer slider sits, as a percentage of the page height (default 34). */
+    var ringerSliderPos: Int
+        get() = sp.getInt("ringer_slider_pos", 34).coerceIn(0, 100)
+        set(v) = edit { putInt("ringer_slider_pos", v.coerceIn(0, 100)) }
+
     /** What the timer was last used for ("Reading" or "Leisure") and for how long, so the sheet
      *  opens on the same choice. See [FlipTimer]. */
     var timerLabel: String

@@ -53,7 +53,8 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
     /** Side margin, in dp, of the content: 24 (the grid's gutter). Blocks that run under the ringer
      *  slider's reach keep a wider margin on the right so nothing meets its knob. */
     private val gutter = 24
-    private val endGutter get() = if (host.prefs.ringerSlider) 48 else gutter
+    private val endGutter get() = if (host.prefs.ringerSlider && !host.prefs.ringerSliderLeft) 48 else gutter
+    private val startGutter get() = if (host.prefs.ringerSlider && host.prefs.ringerSliderLeft) 48 else gutter
 
     override fun build(): View {
         val frame = GestureFrame(host).apply {
@@ -83,14 +84,15 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         ringerSlider = null
         if (host.prefs.ringerSlider) {
             // A sibling of the scrolling content, never inside it: it travels with this page and
-            // stays put while the page scrolls. 34% down, thumb-reachable and clear of the clock.
+            // stays put while the page scrolls. 34% down by default (Settings can move it), thumb-reachable and clear of the clock.
             val slider = RingerSlider(host)
             ringerSlider = slider
             root.addView(slider, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.TOP))
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                (if (host.prefs.ringerSliderLeft) Gravity.START else Gravity.END) or Gravity.TOP))
             root.addOnLayoutChangeListener { _, _, t, _, b, _, _, _, _ ->
                 val h = (b - t).toFloat()
-                slider.translationY = minOf(h * 0.34f, h - slider.measuredHeight - ui.dp(8)).coerceAtLeast(0f)
+                slider.translationY = minOf(h * host.prefs.ringerSliderPos / 100f, h - slider.measuredHeight - ui.dp(8)).coerceAtLeast(0f)
             }
             slider.sync(Ringer.mode(host), Ringer.hasAccess(host))
         }
@@ -268,7 +270,7 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
      */
     private fun readingBlock(book: BookEntry): View {
         val opened = book.openedAt > 0
-        val block = ui.vertical().apply { setPadding(ui.dp(gutter), ui.dp(40), ui.dp(endGutter), 0) }
+        val block = ui.vertical().apply { setPadding(ui.dp(startGutter), ui.dp(40), ui.dp(endGutter), 0) }
 
         val row = ui.horizontal().apply { gravity = Gravity.TOP }
         row.addView(CoverView(host, p, book), LinearLayout.LayoutParams(ui.dp(120), ui.dp(180)))
@@ -299,7 +301,7 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
     }
 
     private fun emptyState(): View {
-        val block = ui.vertical().apply { setPadding(ui.dp(gutter), ui.dp(40), ui.dp(endGutter), 0) }
+        val block = ui.vertical().apply { setPadding(ui.dp(startGutter), ui.dp(40), ui.dp(endGutter), 0) }
         block.addView(ui.serif("Your shelf is empty", 20f, bold = true))
         block.addView(ui.button("Get free books", filled = true) { Starter.show(host) }, ui.lp().apply { topMargin = ui.dp(24) })
         block.addView(ui.button("Add my books") { AddBooks.show(host) }, ui.lp().apply { topMargin = ui.dp(8) })
@@ -312,7 +314,7 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
      *  is active; long-press for the full sheet. */
     private fun nowListening(s: NowPlaying.State): View {
         val np = NowPlaying.get(host)
-        val col = ui.vertical().apply { setPadding(ui.dp(gutter), ui.dp(32), ui.dp(endGutter), 0) }
+        val col = ui.vertical().apply { setPadding(ui.dp(startGutter), ui.dp(32), ui.dp(endGutter), 0) }
 
         val row = ui.horizontal().apply { gravity = Gravity.CENTER_VERTICAL }
         val art = ImageView(host).apply {

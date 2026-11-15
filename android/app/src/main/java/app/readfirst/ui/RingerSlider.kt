@@ -29,6 +29,8 @@ import app.readfirst.data.Ringer
 class RingerSlider(private val host: HomeActivity) : View(host) {
     private val p = host.ui.p
     private val d = resources.displayMetrics.density
+    /** On the left edge instead of the right: everything is drawn and hit-tested mirrored. */
+    private val left = host.prefs.ringerSliderLeft
     private val hasVibrator = Ringer.hasVibrator(host)
     private val count = RingerNotches.count(hasVibrator)
     private val notchPx = 56f * d
@@ -77,8 +79,8 @@ class RingerSlider(private val host: HomeActivity) : View(host) {
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                // The right-hand sliver is not ours: it belongs to the page beneath.
-                if (ev.x > 34f * d) return false
+                // The sliver on the screen-edge side is not ours: it belongs to the page beneath.
+                if (if (left) ev.x < width - 34f * d else ev.x > 34f * d) return false
                 parent?.requestDisallowInterceptTouchEvent(true)
                 mover?.cancel()
                 dragging = true
@@ -197,7 +199,8 @@ class RingerSlider(private val host: HomeActivity) : View(host) {
     // ---- drawing ------------------------------------------------------------------------------
 
     override fun onDraw(canvas: Canvas) {
-        val trackX = width - 14f * d
+        val trackX = if (left) 14f * d else width - 14f * d
+        val glyphDx = if (left) 20f * d else -20f * d
         val shown = if (dragging) RingerNotches.nearest(knobY, notchPx, count) else notch
         val top = RingerNotches.centerY(0, notchPx)
         val bottom = RingerNotches.centerY(count - 1, notchPx)
@@ -218,7 +221,7 @@ class RingerSlider(private val host: HomeActivity) : View(host) {
             val quiet = kind == RingerNotches.SILENT && !access
             stroke.color = if (i == shown && !quiet) p.text else p.soft
             stroke.strokeWidth = 1.5f * d
-            glyph(canvas, kind, trackX - 20f * d, RingerNotches.centerY(i, notchPx))
+            glyph(canvas, kind, trackX + glyphDx, RingerNotches.centerY(i, notchPx))
         }
 
         val r = 11f * d
