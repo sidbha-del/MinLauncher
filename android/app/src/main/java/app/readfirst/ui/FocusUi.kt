@@ -330,8 +330,9 @@ object TimeStats {
 }
 
 /**
- * One notice at a time on Home, most important first: a phone problem, then the one-time
- * explanation of the app pause.
+ * Home shows a notice only for a real problem with the phone (it is not the home screen, say):
+ * one 48dp row of warning-coloured text, underlined in Black ink where colour is not there to
+ * carry it. Tapping it fixes the problem. Nothing is shown otherwise.
  */
 object HomeNotice {
     fun build(host: HomeActivity): View? {
@@ -339,46 +340,18 @@ object HomeNotice {
         val p = ui.p
         val problem = app.readfirst.data.PhoneCheck.run(host)
             .firstOrNull { it.level == app.readfirst.data.PhoneCheck.Level.PROBLEM && it.id !in host.laterNotices }
-        if (problem != null) {
-            return card(host, problem.title, problem.hint, "Fix", {
-                if (problem.id == "folders") host.pickFolder() else problem.fix(host)
-            }, "Later") { host.laterNotices += problem.id; host.rebuild() }
+            ?: return null
+        val row = ui.text(problem.title, 14f, p.warn).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            minHeight = ui.dp(48)
+            setPadding(ui.dp(24), 0, ui.dp(24), 0)
+            if (p.isBlack) paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+            contentDescription = "${problem.title}. Tap to fix."
         }
-        val prefs = host.prefs
-        if (prefs.pauseEnabled && "pause_intro" !in prefs.dismissedNotices) {
-            val names = host.catalog.apps.filter { Focus.isDistracting(prefs, host.catalog, it.component.packageName) }
-                .map { prefs.label(it.key, it.label) }.distinct()
-            if (names.isNotEmpty()) {
-                val list = if (names.size <= 2) names.joinToString(" and ") else "${names.take(2).joinToString(", ")} and ${names.size - 2} more"
-                return card(host, "A pause before feeds",
-                    "Opening $list from here now waits a few seconds and offers your book instead.",
-                    "Change", { host.push(FocusAppsScreen(host)) }, "OK") {
-                    prefs.dismissedNotices = prefs.dismissedNotices + "pause_intro"
-                }
-            }
+        ui.tappable(row, { if (problem.id == "folders") host.pickFolder() else problem.fix(host) })
+        return ui.vertical().apply {
+            addView(row, ui.lp())
+            addView(ui.rule(soft = true))
         }
-        return null
-    }
-
-    private fun card(host: HomeActivity, title: String, body: String, yes: String, onYes: () -> Unit, no: String, onNo: () -> Unit): View {
-        val ui = host.ui
-        val p = ui.p
-        val col = ui.vertical().apply {
-            setPadding(ui.dp(14), ui.dp(12), ui.dp(14), ui.dp(12))
-            background = ui.box(0, dashed = true)
-        }
-        col.addView(ui.text(title, 15f, face = Fonts.sansBold))
-        col.addView(ui.text(body, 13.5f, p.soft).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, t = 4) })
-        val row = ui.horizontal()
-        row.addView(ui.mono(yes, 11f, p.text).apply {
-            setPadding(0, ui.dp(10), ui.dp(18), ui.dp(2))
-            ui.tappable(this, onYes)
-        }, ui.lp(LinearLayout.LayoutParams.WRAP_CONTENT))
-        row.addView(ui.mono(no, 11f, p.soft).apply {
-            setPadding(ui.dp(4), ui.dp(10), ui.dp(4), ui.dp(2))
-            ui.tappable(this, onNo)
-        }, ui.lp(LinearLayout.LayoutParams.WRAP_CONTENT))
-        col.addView(row)
-        return col.also { ui.margins(it, 18, 18, 18, 0) }
     }
 }

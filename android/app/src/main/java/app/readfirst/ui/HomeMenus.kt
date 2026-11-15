@@ -6,8 +6,8 @@ import android.widget.Toast
 import app.readfirst.HomeActivity
 import app.readfirst.book.Opds
 import app.readfirst.data.Catalogs
-import app.readfirst.data.FlipTimer
 import app.readfirst.data.Ink
+import app.readfirst.data.Prefs
 
 /** Long-press on Home: the way to Settings without going through the app list. */
 object HomeMenu {
@@ -25,10 +25,10 @@ object HomeMenu {
             host.dismissSheet()
             prefs.toggleInk()
         })
-        // Only where the companion app that keeps the countdown is installed.
-        if (FlipTimer.isAvailable(host)) {
-            val timer = FlipTimer.cached
-            col.addView(ui.row("Timer", if (timer.active) timer.line() else "Reading or leisure") { TimerSheet.show(host) })
+        // The timer has its own round button beside the clock now. With empty dock slots no longer
+        // drawn, this is the quick way to add an app to the dock (Apps and Settings still can).
+        if (prefs.pinned.size < Prefs.MAX_PINS) {
+            col.addView(ui.row("Add app to dock", "${prefs.pinned.size} / ${Prefs.MAX_PINS}") { Dock.pickApp(host) })
         }
         col.addView(ui.row("Add books") { AddBooks.show(host) })
         col.addView(ui.row("Free classics", "One tap") { Starter.show(host) })

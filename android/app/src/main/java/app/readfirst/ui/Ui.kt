@@ -102,6 +102,7 @@ object Fonts {
     val serifBold: Typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
     val serifItalic: Typeface = Typeface.create(Typeface.SERIF, Typeface.ITALIC)
     val mono: Typeface = Typeface.MONOSPACE
+    val monoBold: Typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
     val sans: Typeface = Typeface.create("sans-serif", Typeface.NORMAL)
     val sansBold: Typeface = Typeface.create("sans-serif", Typeface.BOLD)
 }
@@ -274,6 +275,23 @@ class Ui(val context: Context, val p: InkPalette) {
         }
         setOnClickListener { onClick() }
     }
+
+    /**
+     * The calmer full-width button of the Home redesign: 52dp tall, sentence case, bold sans.
+     * [filled] is the one primary action on a screen (ink fill, page-coloured label); otherwise a
+     * 1.5dp outline. Pressed state is a colour swap, never a ripple.
+     */
+    fun button(label: String, filled: Boolean = false, onClick: () -> Unit): TextView =
+        text(label, 16f, if (filled) p.bg else p.text, Fonts.sansBold).apply {
+            gravity = Gravity.CENTER
+            minHeight = dp(52)
+            setPadding(dp(12), 0, dp(12), 0)
+            background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_pressed), box(if (filled) p.soft else p.pressed))
+                addState(intArrayOf(), box(if (filled) p.text else 0))
+            }
+            setOnClickListener { onClick() }
+        }
 
     fun box(fillColor: Int, dashed: Boolean = false): GradientDrawable = GradientDrawable().apply {
         setColor(fillColor)

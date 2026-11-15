@@ -91,7 +91,7 @@ class HomeActivity : Activity() {
             pinDefaultCommsApps()
             stack.addLast(SetupScreen(this))
         }
-        render(animate = false)
+        render()
         handleWidgetAction(intent)
 
         prefs.addListener(onPrefs)
@@ -176,11 +176,14 @@ class HomeActivity : Activity() {
         if (ringerWatch == null) ringerWatch = runCatching { Ringer.watch(this) { stack.lastOrNull()?.onTimeTick() } }.getOrNull()
         NowPlaying.get(this).start(onNowPlaying)
         // Reading position, progress and ink may have changed while the reader was open.
-        if (lookChanged()) {
+        val restyled = lookChanged()
+        if (restyled) {
             ui = makeUi()
             paintWindow()
         }
-        if (sheet == null) rebuild() else sheetRefresh?.invoke()
+        // Only what actually changed is rebuilt: coming back from the reader or a settings page
+        // with nothing new to show keeps the views, so Home does not flash or lose its place.
+        if (sheet == null) { if (restyled) rebuild() else refreshIfChanged() } else sheetRefresh?.invoke()
         if (SystemClock.elapsedRealtime() - lastScan > 5 * 60_000L) {
             lastScan = SystemClock.elapsedRealtime()
             Scanner.refresh(this)
@@ -190,7 +193,7 @@ class HomeActivity : Activity() {
     // ---- navigation ---------------------------------------------------------------------------
 
     fun push(screen: Screen) {
-        dismissSheet()
+        dismissSheet(refresh = false)
         stack.lastOrNull()?.onHide()
         stack.addLast(screen)
         render()
@@ -198,19 +201,49 @@ class HomeActivity : Activity() {
 
     fun pop() {
         if (stack.size <= 1) return
-        dismissSheet()
+        dismissSheet(refresh = false)
         stack.removeLast().onHide()
         render()
     }
 
     fun goHome() {
-        dismissSheet()
+        dismissSheet(refresh = false)
         while (stack.size > 1) stack.removeLast().onHide()
         (stack.firstOrNull() as? Pager)?.centerOnHome()
         render()
     }
 
-    fun rebuild() = render(animate = false)
+    /** Builds the top screen afresh, whether or not anything changed. */
+    fun rebuild() = render()
+
+    /**
+     * What Home and its pages show, boiled down to a number: settings, the library, the installed
+     * apps, what is playing, and the few system states (default home screen, Do Not Disturb and
+     * notification access, a phone problem) the user can change in Android's own settings and
+     * come back from. Equal numbers mean a rebuild would draw the same thing.
+     */
+    private fun dataSignature(): Int {
+        val problems = runCatching {
+            app.readfirst.data.PhoneCheck.run(this)
+                .filter { it.level == app.readfirst.data.PhoneCheck.Level.PROBLEM && it.id !in laterNotices }
+                .map { it.id }
+        }.getOrDefault(emptyList())
+        return listOf(
+            prefs.revision, System.identityHashCode(library.books), System.identityHashCode(catalog.apps),
+            listeningKey, laterNotices.size, problems,
+            app.readfirst.data.HomeRole.isDefault(this), Ringer.hasAccess(this),
+            NowPlaying.get(this).isAllowed(), app.readfirst.data.FlipTimer.isAvailable(this),
+        ).hashCode()
+    }
+
+    private var builtSignature = 0
+
+    /** Rebuilds the top screen only if what it shows changed; else just freshens its live parts.
+     *  Any screen other than the pager keeps the old always-rebuild behaviour. */
+    private fun refreshIfChanged() {
+        val top = stack.lastOrNull() ?: return
+        if (top is Pager && dataSignature() == builtSignature) top.onShown() else rebuild()
+    }
 
     /** Async work (a catalog page loading) only redraws if its screen is still the one showing. */
     fun isTop(screen: Screen) = stack.lastOrNull() === screen && sheet == null
@@ -232,20 +265,19 @@ class HomeActivity : Activity() {
             }
             // Rebuilding under an open sheet would detach it (closing a sheet rebuilds), and
             // while hidden behind the reader onResume rebuilds instead.
-            if (sheet == null && visible) rebuild()
+            if (sheet == null && visible) refreshIfChanged()
         }
     }
 
-    private fun render(animate: Boolean = true) {
+    /** A plain swap: the new screen replaces the old at once. A fade here ran an alpha pass over
+     *  the whole screen, for nothing the reader needs. */
+    private fun render() {
         val screen = stack.lastOrNull() ?: return
         val view = screen.build()
         root.removeAllViews()
         root.addView(view, ui.rootParams())
         sheet = null
-        if (animate && ui.p.animate) {
-            view.alpha = 0f
-            view.animate().alpha(1f).setDuration(if (catalog.isLowRam) 90 else 140).withLayer().start()
-        }
+        builtSignature = if (screen is Pager) dataSignature() else 0
     }
 
     private fun makeUi() = Ui(this, InkPalette.of(prefs.ink, prefs.launcherPage))
@@ -276,12 +308,12 @@ class HomeActivity : Activity() {
         sheet = attachSheet(root, ui, content) { dismissSheet() }
     }
 
-    fun dismissSheet() {
+    fun dismissSheet(refresh: Boolean = true) {
         val s = sheet ?: return
         sheet = null
         sheetRefresh = null
         root.removeView(s)
-        rebuild()
+        if (refresh) refreshIfChanged()
     }
 
     // ---- apps ---------------------------------------------------------------------------------

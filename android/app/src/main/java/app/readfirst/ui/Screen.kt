@@ -13,6 +13,10 @@ abstract class Screen(val host: HomeActivity) {
     open fun onHide() {}
     open fun onTimeTick() {}
 
+    /** The activity came back to the foreground, or a sheet closed, and the screen was kept as it
+     *  is (nothing it shows had changed): bring its live bits (clock, timer) up to date. */
+    open fun onShown() { onTimeTick() }
+
     /** True while this screen is mid-gesture and must not have its view torn out from under it
      *  by a background rebuild (a prefs/library change, a clock tick). [Pager] is the only one
      *  that ever needs this, for its live page-drag. */

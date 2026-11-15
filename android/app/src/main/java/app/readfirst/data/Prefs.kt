@@ -40,6 +40,11 @@ class Prefs private constructor(context: Context) {
     private val sp: SharedPreferences = context.applicationContext.getSharedPreferences("prefs", Context.MODE_PRIVATE)
     private val listeners = ArrayList<() -> Unit>()
 
+    /** Counts every change, so a screen can tell cheaply whether anything it shows may have moved. */
+    @Volatile
+    var revision = 0
+        private set
+
     var ink: Ink
         get() = runCatching { Ink.valueOf(sp.getString(KEY_INK, null) ?: "") }.getOrDefault(Ink.COLOR)
         set(v) = edit { putString(KEY_INK, v.name) }
@@ -124,6 +129,11 @@ class Prefs private constructor(context: Context) {
     var ringerAccessAsked: Boolean
         get() = sp.getBoolean("ringer_access_asked", false)
         set(v) = edit { putBoolean("ringer_access_asked", v) }
+
+    /** Home's slim ringer slider on the right edge (its Settings switch comes with the Settings rework). */
+    var ringerSlider: Boolean
+        get() = sp.getBoolean("ringer_slider", true)
+        set(v) = edit { putBoolean("ringer_slider", v) }
 
     /** What the timer was last used for ("Reading" or "Leisure") and for how long, so the sheet
      *  opens on the same choice. See [FlipTimer]. */
@@ -232,6 +242,7 @@ class Prefs private constructor(context: Context) {
 
     private inline fun edit(block: SharedPreferences.Editor.() -> Unit) {
         sp.edit().apply(block).apply()
+        revision++
         listeners.toList().forEach { it() }
     }
 

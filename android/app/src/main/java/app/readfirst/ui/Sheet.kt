@@ -3,6 +3,7 @@ package app.readfirst.ui
 import android.content.Context
 import android.view.Gravity
 import android.view.View
+import android.view.animation.PathInterpolator
 import android.widget.FrameLayout
 import android.widget.ScrollView
 
@@ -37,10 +38,10 @@ fun attachSheet(root: FrameLayout, ui: Ui, content: View, onBackdrop: () -> Unit
     overlay.addView(holder, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
     root.addView(overlay, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
     if (ui.p.animate) {
+        // Translation only: the dim layer snaps on instead of fading, which would cost a
+        // full-screen alpha pass on every frame of the slide.
         holder.translationY = 400 * ui.density
-        holder.animate().translationY(0f).setDuration(170).start()
-        dim.alpha = 0f
-        dim.animate().alpha(1f).setDuration(170).start()
+        holder.animate().translationY(0f).setDuration(180).setInterpolator(PathInterpolator(0.2f, 0f, 0f, 1f)).start()
     }
     return overlay
 }

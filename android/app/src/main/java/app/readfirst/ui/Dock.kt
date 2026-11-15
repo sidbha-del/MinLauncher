@@ -20,64 +20,48 @@ import app.readfirst.data.Focus
 import app.readfirst.data.Prefs
 
 /**
- * Pinned apps, shared by every page of the pager: always on Home, and on Library/Apps too once
- * the user opts in via [Prefs.dockEverywhere]. Never shown in the reader, since that's a separate
- * activity this view is never part of. Empty slots show a "+" that opens a picker directly, so
- * building a dock doesn't require detouring through the Apps list's long-press menu.
+ * Pinned apps: on Home's page, and on Library and Apps too once the user opts in via
+ * [Prefs.dockEverywhere]. Only filled slots are drawn, and with nothing pinned the dock is not
+ * there at all (no rule, no height). Adding an app stays reachable from Apps (long-press, "Pin to
+ * home"), Settings and the Home menu ([pickApp]). Never shown in the reader, a separate activity.
  */
 object Dock {
     fun build(host: HomeActivity): View {
         val ui = host.ui
         val p = ui.p
         val byKey = host.catalog.apps.associateBy { it.key }
-        val apps = host.prefs.pinned.mapNotNull { byKey[it] }
+        val apps = host.prefs.pinned.mapNotNull { byKey[it] }.take(Prefs.MAX_PINS)
+        if (apps.isEmpty()) return View(host).apply { visibility = View.GONE }
         val row = ui.horizontal()
-        val size = ui.dp(36)
-        for (app in apps.take(Prefs.MAX_PINS)) {
+        val size = ui.dp(40)
+        for (app in apps) {
             val cell = ui.vertical().apply {
                 gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(0, ui.dp(10), 0, ui.dp(8))
+                setPadding(0, ui.dp(8), 0, ui.dp(8))
             }
             val icon = ImageView(host)
             cell.addView(icon, LinearLayout.LayoutParams(size, size))
             host.catalog.loadIcon(app, size, p.ink, p.dark) { icon.setImageBitmap(it) }
-            cell.addView(ui.text(host.prefs.label(app.key, app.label), 12f).apply {
+            cell.addView(ui.text(host.prefs.label(app.key, app.label), 12f, p.soft).apply {
                 maxLines = 1
                 ellipsize = TextUtils.TruncateAt.END
                 gravity = Gravity.CENTER
-            }.also { ui.margins(it, 4, 6, 4, 0) })
+            }.also { ui.margins(it, 4, 4, 4, 0) })
             ui.tappable(cell, { host.launchApp(app) }, { AppActions.show(host, app) })
             cell.contentDescription = app.label
-            row.addView(cell, ui.lp(0, weight = 1f))
-        }
-        repeat((Prefs.MAX_PINS - apps.size).coerceAtLeast(0)) {
-            val cell = ui.vertical().apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(0, ui.dp(10), 0, ui.dp(8))
-            }
-            cell.addView(ui.box(0, dashed = true).let { box ->
-                ui.text("+", 16f, p.soft).apply {
-                    gravity = Gravity.CENTER
-                    background = box
-                }
-            }, LinearLayout.LayoutParams(size, size))
-            cell.addView(ui.text("Add", 12f, p.soft).apply {
-                maxLines = 1
-                gravity = Gravity.CENTER
-            }.also { ui.margins(it, 4, 6, 4, 0) })
-            ui.tappable(cell, { pickAppSheet(host) })
-            cell.contentDescription = "Add a pinned app"
             row.addView(cell, ui.lp(0, weight = 1f))
         }
         return ui.vertical().apply {
             addView(ui.rule(soft = true))
             addView(row)
-            ui.margins(this, 18, 20, 18, 0)
+            ui.margins(this, 24, 16, 24, 0)
         }
     }
 
-    /** A quick search-and-pin sheet, so filling an empty dock slot doesn't require finding the
-     *  app in the full list first and long-pressing it. */
+    /** A quick search-and-pin sheet, so adding a dock app doesn't require finding it in the full
+     *  list first and long-pressing it. */
+    fun pickApp(host: HomeActivity) = pickAppSheet(host)
+
     private fun pickAppSheet(host: HomeActivity) {
         val ui = host.ui
         val p = ui.p

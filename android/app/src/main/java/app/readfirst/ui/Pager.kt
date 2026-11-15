@@ -4,27 +4,27 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Rect
-import android.graphics.drawable.GradientDrawable
-import android.os.Build
-import android.view.Gravity
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.view.MotionEvent
 import android.view.VelocityTracker
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.PathInterpolator
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import app.readfirst.HomeActivity
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /**
- * Library, Home and Apps side by side — three pages wide, dragged with the finger and settling on
+ * Library, Home and Apps side by side: three pages wide, dragged with the finger and settling on
  * release. Home is the centre (index 1) and where the pager opens; Library sits to its left,
- * Apps to its right, matching "swipe left for Apps, swipe right for Library" everywhere else this
- * is described. This is the new base of [HomeActivity.stack].
+ * Apps to its right. This is the new base of [HomeActivity.stack].
+ *
+ * Motion is a plain horizontal slide: nothing but the track's translation changes per frame, and
+ * nothing is added to or removed from the layout while it moves or when it settles. The dock lives
+ * inside the Home page (or, when it shows on every page, once below the track), never swapped in
+ * and out at settle, so the track is never re-measured under the finger.
  */
 class Pager(host: HomeActivity) : Screen(host) {
     private val library = LibraryScreen(host)
@@ -38,110 +38,101 @@ class Pager(host: HomeActivity) : Screen(host) {
         val ui = host.ui
         val p = ui.p
         val outer = ui.vertical()
+        val everywhere = host.prefs.dockEverywhere
 
-        val pageViews = listOf(library.build(), home.build(), apps.build())
-        val t = PagerTrack(host) { p.animate }
+        val homeView = home.build()
+        // Home keeps its own dock inside its page; with the dock on every page it is shared below.
+        val homePage: View = if (everywhere) homeView else ui.vertical().apply {
+            addView(homeView, ui.lp(h = 0, weight = 1f))
+            addView(Dock.build(host))
+        }
+        val pageViews = listOf(library.build(), homePage, apps.build())
+        val dots = PageDots(host, p)
+        val t = PagerTrack(host, { p.animate }, { p.animate && !host.catalog.isLowRam })
         pageViews.forEach { t.addView(it) }
         track = t
 
-        val dockSlot = ui.vertical()
-        val dots = dotsRow(ui, p)
-
-        fun showPage(page: Int) {
-            currentPage = page
-            dockSlot.removeAllViews()
-            if (page == 1 || host.prefs.dockEverywhere) dockSlot.addView(Dock.build(host))
-            updateDots(dots, p, page.toFloat())
-            applyPageTurn(pageViews, page.toFloat(), p.animate)
-        }
-
-        t.onProgress = { progress ->
-            updateDots(dots, p, progress)
-            applyPageTurn(pageViews, progress, p.animate)
-        }
-        t.onSettled = { page -> showPage(page) }
+        t.onProgress = { progress -> dots.setActive(PagerMath.nearestPage(progress, pageViews.size)) }
+        t.onSettled = { page -> currentPage = page }
 
         val viewport = FrameLayout(host).apply { clipChildren = true }
         viewport.addView(t, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         t.snapTo(currentPage)
-        showPage(currentPage)
-        excludeEdgesFromBackGesture(viewport)
+        dots.setActive(currentPage)
 
         outer.addView(viewport, ui.lp(h = 0, weight = 1f))
-        outer.addView(dockSlot)
-        outer.addView(dots)
+        if (everywhere) outer.addView(Dock.build(host))
+        outer.addView(dots, ui.lp(h = ui.dp(24)))
         return outer
     }
 
     /** Re-centres on Home without animating: called after [HomeActivity.goHome] pops back to the
      *  pager, which is never visible at that moment (something was pushed on top of it), so a jump
-     *  cut is both correct and the only option — animating a hidden view would be wasted work. */
+     *  cut is both correct and the only option. */
     fun centerOnHome() {
         currentPage = 1
         track?.snapTo(1)
     }
 
     override fun onTimeTick() = home.onTimeTick()
+    override fun onShown() = home.onShown()
     override fun onHide() {
         apps.onHide()
         home.onHide()
         library.onHide()
     }
     override fun blocksRebuild(): Boolean = track?.inDrag == true
+}
 
-    private fun dotsRow(ui: Ui, p: InkPalette): LinearLayout = ui.horizontal().apply {
-        gravity = Gravity.CENTER
-        setPadding(0, ui.dp(8), 0, ui.dp(12))
-        repeat(3) {
-            val dot = View(host).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(p.soft) } }
-            addView(dot, LinearLayout.LayoutParams(ui.dp(6), ui.dp(6)).apply { setMargins(ui.dp(3), 0, ui.dp(3), 0) })
-        }
+/** Three small page dots, drawn in one view: the current one filled, the others a quiet fill in
+ *  Colour ink and an outline in Black ink (where the two inks would otherwise match). */
+private class PageDots(context: Context, private val p: InkPalette) : View(context) {
+    private val d = resources.displayMetrics.density
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var active = -1
+
+    fun setActive(i: Int) {
+        if (i == active) return
+        active = i
+        invalidate()
     }
 
-    private fun updateDots(row: LinearLayout, p: InkPalette, progress: Float) {
-        val nearest = progress.roundToInt().coerceIn(0, 2)
-        for (i in 0 until row.childCount) {
-            (row.getChildAt(i).background as? GradientDrawable)?.setColor(if (i == nearest) p.text else p.soft)
-        }
-    }
-
-    /** A minimal page-turn: the page settling into view eases up from a slight shrink, and the
-     *  pages nearest the centre pick up a touch of elevation, using only plain View properties —
-     *  no canvas work. Off entirely when [p.animate] is false (Black ink / e-ink). */
-    private fun applyPageTurn(pages: List<View>, progress: Float, animate: Boolean) {
-        pages.forEachIndexed { i, v ->
-            if (!animate) {
-                v.scaleX = 1f; v.scaleY = 1f; v.elevation = 0f
-                return@forEachIndexed
+    override fun onDraw(canvas: Canvas) {
+        val r = 2.5f * d
+        val gap = 8f * d
+        val total = 3 * 2 * r + 2 * gap
+        var x = (width - total) / 2f + r
+        val y = height / 2f
+        repeat(3) { i ->
+            if (i == active) {
+                paint.style = Paint.Style.FILL; paint.color = p.text
+                canvas.drawCircle(x, y, r, paint)
+            } else if (p.isBlack) {
+                paint.style = Paint.Style.STROKE; paint.strokeWidth = maxOf(1f, d); paint.color = p.text
+                canvas.drawCircle(x, y, r - paint.strokeWidth / 2f, paint)
+            } else {
+                paint.style = Paint.Style.FILL; paint.color = p.ruleSoft
+                canvas.drawCircle(x, y, r, paint)
             }
-            val dist = abs(progress - i).coerceIn(0f, 1f)
-            val scale = 1f - dist * 0.04f
-            v.scaleX = scale
-            v.scaleY = scale
-            v.elevation = (1f - dist * 2f).coerceAtLeast(0f) * 8f * v.resources.displayMetrics.density
-        }
-    }
-
-    /** Android 10+'s predictive-back edge gesture would otherwise compete with a page-turn drag
-     *  started near the screen edge; there's nothing for Back to do on a launcher anyway. */
-    private fun excludeEdgesFromBackGesture(view: View) {
-        if (Build.VERSION.SDK_INT < 29) return
-        view.addOnLayoutChangeListener { v, l, t, r, b, _, _, _, _ ->
-            val w = r - l; val h = b - t
-            if (w <= 0 || h <= 0) return@addOnLayoutChangeListener
-            val edge = (24 * v.resources.displayMetrics.density).roundToInt()
-            v.systemGestureExclusionRects = listOf(Rect(0, 0, edge, h), Rect(w - edge, 0, w, h))
+            x += 2 * r + gap
         }
     }
 }
 
 /**
  * The horizontal drag surface: three same-width pages laid out side by side, translated as one
- * unit. Only claims a touch once it's clearly horizontal (matching [GestureFrame]'s own
- * dominance heuristic), so a page's own vertical scrolling — or Home's down-swipe for the
- * notification shade, handled by its own nested [GestureFrame] — is never stolen.
+ * unit. Only claims a touch once it's clearly horizontal, so a page's own vertical scrolling, or
+ * Home's down-swipe for the notification shade, is never stolen; a child that wants the whole
+ * gesture (the ringer slider, the A-Z strip) says so with requestDisallowInterceptTouchEvent.
+ *
+ * Drag maths uses raw screen coordinates: this view moves under the finger, so its own local
+ * coordinates would shift with every frame of the drag.
  */
-private class PagerTrack(context: Context, private val canAnimate: () -> Boolean) : ViewGroup(context) {
+private class PagerTrack(
+    context: Context,
+    private val canAnimate: () -> Boolean,
+    private val useLayer: () -> Boolean,
+) : ViewGroup(context) {
     var onSettled: ((Int) -> Unit)? = null
     var onProgress: ((Float) -> Unit)? = null
     val inDrag get() = isDragging
@@ -152,10 +143,14 @@ private class PagerTrack(context: Context, private val canAnimate: () -> Boolean
     private var tracking = false
     private var downX = 0f
     private var downY = 0f
+    private var dragOriginX = 0f
+    private var startPage = 1
     private var startTranslation = 0f
     private var velocityTracker: VelocityTracker? = null
     private var settleAnimator: ValueAnimator? = null
     private val slop = ViewConfiguration.get(context).scaledTouchSlop
+    private val density = resources.displayMetrics.density
+    private val ease = PathInterpolator(0.2f, 0f, 0f, 1f)
 
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
         val w = MeasureSpec.getSize(widthSpec)
@@ -177,21 +172,44 @@ private class PagerTrack(context: Context, private val canAnimate: () -> Boolean
         if (!isDragging) translationX = -currentPage * pageWidth.toFloat()
     }
 
-    /** Instant, no animation — safe to call from a fresh rebuild, never mid-drag. */
+    /** Instant, no animation: safe to call from a fresh rebuild, never mid-drag. */
     fun snapTo(page: Int) {
         currentPage = page.coerceIn(0, (childCount - 1).coerceAtLeast(0))
         if (!isDragging && pageWidth > 0) translationX = -currentPage * pageWidth.toFloat()
     }
 
+    private fun track(ev: MotionEvent) {
+        // Velocity in screen coordinates, for the same reason as the drag itself.
+        val vt = velocityTracker ?: return
+        val copy = MotionEvent.obtain(ev)
+        copy.setLocation(ev.rawX, ev.rawY)
+        vt.addMovement(copy)
+        copy.recycle()
+    }
+
+    private fun newTracker(ev: MotionEvent) {
+        velocityTracker?.recycle()
+        velocityTracker = VelocityTracker.obtain()
+        track(ev)
+    }
+
+    private fun crossedSlop(ev: MotionEvent): Boolean {
+        val dx = ev.rawX - downX
+        val dy = ev.rawY - downY
+        return abs(dx) > slop && abs(dx) > abs(dy) * 1.5f
+    }
+
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> { downX = ev.x; downY = ev.y; tracking = false }
+            MotionEvent.ACTION_DOWN -> {
+                downX = ev.rawX; downY = ev.rawY; tracking = false
+                newTracker(ev)
+            }
             MotionEvent.ACTION_MOVE -> {
-                val dx = ev.x - downX
-                val dy = ev.y - downY
-                if (!tracking && abs(dx) > slop && abs(dx) > abs(dy) * 1.5f) {
+                track(ev)
+                if (!tracking && crossedSlop(ev)) {
                     tracking = true
-                    beginDrag()
+                    beginDrag(ev)
                 }
                 if (tracking) return true
             }
@@ -200,21 +218,17 @@ private class PagerTrack(context: Context, private val canAnimate: () -> Boolean
     }
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
-        velocityTracker?.addMovement(ev)
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                downX = ev.x; downY = ev.y
-                velocityTracker = VelocityTracker.obtain().also { it.addMovement(ev) }
+                downX = ev.rawX; downY = ev.rawY
+                if (velocityTracker == null) newTracker(ev)
             }
             MotionEvent.ACTION_MOVE -> {
-                if (!tracking) {
-                    val dx = ev.x - downX
-                    val dy = ev.y - downY
-                    if (abs(dx) > slop && abs(dx) > abs(dy) * 1.5f) { tracking = true; beginDrag() }
-                }
+                track(ev)
+                if (!tracking && crossedSlop(ev)) { tracking = true; beginDrag(ev) }
                 if (tracking && pageWidth > 0) {
                     val w = pageWidth.toFloat()
-                    var t = startTranslation + (ev.x - downX)
+                    var t = startTranslation + (ev.rawX - dragOriginX)
                     val min = -(childCount - 1) * w
                     if (t > 0f) t *= 0.3f
                     if (t < min) t = min + (t - min) * 0.3f
@@ -223,7 +237,8 @@ private class PagerTrack(context: Context, private val canAnimate: () -> Boolean
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                if (tracking) endDrag(ev)
+                track(ev)
+                if (tracking) endDrag(ev, cancelled = ev.actionMasked == MotionEvent.ACTION_CANCEL)
                 velocityTracker?.recycle()
                 velocityTracker = null
                 tracking = false
@@ -232,51 +247,70 @@ private class PagerTrack(context: Context, private val canAnimate: () -> Boolean
         return true
     }
 
-    private fun beginDrag() {
-        isDragging = true
-        settleAnimator?.cancel()
-        startTranslation = translationX
-        if (velocityTracker == null) velocityTracker = VelocityTracker.obtain()
+    private fun stopSettle() {
+        settleAnimator?.let {
+            // Without these, cancel() would still run the end listener: onSettled, a page change and
+            // isDragging flipped back, all in the middle of a new drag.
+            it.removeAllListeners()
+            it.removeAllUpdateListeners()
+            it.cancel()
+        }
+        settleAnimator = null
     }
 
-    private fun endDrag(ev: MotionEvent) {
+    private fun beginDrag(ev: MotionEvent) {
+        stopSettle()
+        isDragging = true
+        // Re-grabbing a page still settling: the page it is nearest is the one the drag starts from.
+        val w = pageWidth.toFloat().coerceAtLeast(1f)
+        currentPage = PagerMath.nearestPage(-translationX / w, childCount)
+        startPage = currentPage
+        startTranslation = translationX
+        // The drag starts where the finger crossed the slop, so the page does not jump under it.
+        dragOriginX = ev.rawX
+        if (useLayer()) setLayerType(LAYER_TYPE_HARDWARE, null)
+        parent?.requestDisallowInterceptTouchEvent(true)
+    }
+
+    private fun endDrag(ev: MotionEvent, cancelled: Boolean) {
         val w = pageWidth.toFloat().coerceAtLeast(1f)
         velocityTracker?.computeCurrentVelocity(1000)
         val vx = velocityTracker?.xVelocity ?: 0f
-        val dx = ev.x - downX
-        var target = currentPage
-        when {
-            vx < -600 || dx < -w * 0.25f -> target += 1
-            vx > 600 || dx > w * 0.25f -> target -= 1
-        }
-        settleTo(target.coerceIn(0, childCount - 1))
+        val dx = ev.rawX - downX
+        val target = if (cancelled) startPage
+        else PagerMath.targetPage(startPage, dx, vx, w, density, childCount)
+        settleTo(target, if (cancelled) 0f else vx)
     }
 
-    private fun settleTo(page: Int) {
+    private fun finishSettle(page: Int) {
+        currentPage = page
+        isDragging = false
+        if (layerType != LAYER_TYPE_NONE) setLayerType(LAYER_TYPE_NONE, null)
+        onProgress?.invoke(page.toFloat())
+        onSettled?.invoke(page)
+    }
+
+    private fun settleTo(page: Int, vx: Float) {
         val w = pageWidth.toFloat()
         val from = translationX
         val to = -page * w
-        settleAnimator?.cancel()
+        stopSettle()
         if (!canAnimate() || w <= 0f) {
             translationX = to
-            currentPage = page
-            isDragging = false
-            onProgress?.invoke(page.toFloat())
-            onSettled?.invoke(page)
+            finishSettle(page)
             return
         }
         settleAnimator = ValueAnimator.ofFloat(from, to).apply {
-            duration = 220
-            interpolator = DecelerateInterpolator()
+            duration = PagerMath.settleDurationMs(to - from, w, vx).toLong()
+            interpolator = ease
             addUpdateListener {
                 translationX = it.animatedValue as Float
                 onProgress?.invoke(-translationX / w)
             }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    currentPage = page
-                    isDragging = false
-                    onSettled?.invoke(page)
+                    settleAnimator = null
+                    finishSettle(page)
                 }
             })
             start()

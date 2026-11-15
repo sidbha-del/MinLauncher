@@ -126,6 +126,6 @@ object Ringer {
     }
 
     @Suppress("DEPRECATION") // VibratorManager is API 31+; this one call covers every version.
-    private fun hasVibrator(context: Context): Boolean =
+    internal fun hasVibrator(context: Context): Boolean =
         runCatching { (context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)?.hasVibrator() }.getOrNull() != false
 }
