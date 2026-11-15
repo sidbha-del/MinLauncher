@@ -16,131 +16,106 @@ import app.readfirst.data.Prefs
 import app.readfirst.data.Ringer
 import app.readfirst.data.RingerNotification
 
-/** Settings: ink, home-screen role, pinned and hidden apps, book folders. */
+/** Settings, in six short sections: Reading, Home, Listening, Focus, Library, About. */
 class SettingsScreen(host: HomeActivity) : Screen(host) {
 
     override fun build(): View {
         val prefs = host.prefs
         val col = ui.vertical()
         col.addView(ui.topBar("Settings", "", "Done", onRight = { host.pop() }))
-        val list = ui.vertical().apply { setPadding(0, 0, 0, ui.dp(24)) }
+        val list = ui.vertical().apply { setPadding(0, 0, 0, ui.dp(32)) }
 
-        list.addView(ui.group("Ink"))
-        list.addView(ui.toggle("Color ink", "Black ink", prefs.ink == Ink.COLOR, { prefs.ink = Ink.COLOR }, { prefs.ink = Ink.BLACK }).also {
-            ui.margins(it, 18, 14, 18, 4)
-        })
-        list.addView(ui.text("Black ink is pure black on white with no animation. Long-press the top bar on Home to switch quickly.", 13f, p.soft).apply {
-            setLineSpacing(0f, 1.3f)
-        }.also { ui.margins(it, 18, 8, 18, 6) })
-
-        list.addView(ui.group("Page"))
-        list.addView(ui.mono("Launcher page", 10f).also { ui.margins(it, 18, 14, 18, 10) })
-        list.addView(PageLook.chooser(ui, prefs.launcherPage) { prefs.launcherPage = it }.also { ui.margins(it, 12, 0, 18, 6) })
-        list.addView(ui.mono("Books", 10f).also { ui.margins(it, 18, 20, 18, 10) })
-        list.addView(ui.toggle("Same as launcher", "Own page", prefs.booksShareLauncherPage,
-            { prefs.booksShareLauncherPage = true }, { prefs.booksShareLauncherPage = false }).also { ui.margins(it, 18, 0, 18, 6) })
+        // ---- Reading -------------------------------------------------------------------------
+        list.addView(ui.section("Reading", first = true))
+        val inkChoice = ui.toggle("Color", "Black", prefs.ink == Ink.COLOR, { prefs.ink = Ink.COLOR }, { prefs.ink = Ink.BLACK })
+        list.addView(ui.setting("Ink", "Black ink: no animation", trailing = inkChoice, trailingWidth = 150))
+        list.addView(ui.setting("Page", "Night turns the ink light"))
+        list.addView(PageLook.chooser(ui, prefs.launcherPage) { prefs.launcherPage = it }.also { ui.margins(it, 24, 0, 18, 12) })
+        list.addView(ui.switchSetting("Books match page", null, prefs.booksShareLauncherPage) { prefs.booksShareLauncherPage = it })
         if (!prefs.booksShareLauncherPage) {
-            list.addView(ui.mono("Book page", 10f).also { ui.margins(it, 18, 14, 18, 10) })
-            list.addView(PageLook.chooser(ui, prefs.booksOwnPage) { prefs.booksOwnPage = it }.also { ui.margins(it, 12, 0, 18, 6) })
+            list.addView(ui.setting("Book page"))
+            list.addView(PageLook.chooser(ui, prefs.booksOwnPage) { prefs.booksOwnPage = it }.also { ui.margins(it, 24, 0, 18, 12) })
         }
-        list.addView(ui.text("Night is a dark page: the ink turns light. Textures are faint and never affect text sharpness.", 13f, p.soft).apply {
-            setLineSpacing(0f, 1.3f)
-        }.also { ui.margins(it, 18, 10, 18, 6) })
 
-        list.addView(ui.group("Now listening"))
-        val np = NowPlaying.get(host)
-        val allowed = np.isAllowed()
-        list.addView(ui.row("Show audiobooks on Home", if (allowed) "On" else "Allow access") { openMediaAccessSettings() })
-        if (allowed) {
-            list.addView(ui.toggle("Audiobook apps", "All audio", !prefs.nowPlayingAllAudio,
-                { prefs.nowPlayingAllAudio = false }, { prefs.nowPlayingAllAudio = true }).also { ui.margins(it, 18, 14, 18, 4) })
-        }
-        list.addView(ui.text(
-            "Shows what Audible, Libby and other audiobook apps are playing, with play and skip. " +
-                "Android files this under notification access; ReadFirst only reads what's playing and never your notifications.",
-            13f, p.soft,
-        ).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 10, 18, 6) })
-
-        list.addView(ui.group("Focus"))
-        val paused = app.readfirst.data.Focus.distracting(prefs, host.catalog).size
-        list.addView(ui.row("Pause before distracting apps", if (prefs.pauseEnabled) "$paused apps" else "Off") {
-            host.push(FocusAppsScreen(host))
-        })
-        val usage = app.readfirst.data.Focus.hasUsageAccess(host)
-        list.addView(ui.row("Compare reading with scrolling", if (usage) "On" else "Allow access") { TimeStats.openUsageAccess(host) })
-        list.addView(ui.row("Today's screen time") { TimeStats.sheet(host) })
-
-        list.addView(ui.group("Device check"))
-        val checks = app.readfirst.data.PhoneCheck.run(host)
-        if (checks.isEmpty()) {
-            list.addView(ui.row("Everything looks good", "✓"))
-        }
-        for (c in checks) {
-            list.addView(ui.row(c.title, if (c.level == app.readfirst.data.PhoneCheck.Level.PROBLEM) "Fix" else "Check") {
-                if (c.id == "folders") host.pickFolder()
-                else if (!c.fix(host)) Toast.makeText(host, c.hint, Toast.LENGTH_LONG).show()
-            })
-        }
-        if (checks.isNotEmpty()) list.addView(ui.text(
-            "Some brands stop apps to save battery. These settings keep Home instant and Now listening on.",
-            12.5f, p.soft,
-        ).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 8, 18, 4) })
-
-        list.addView(ui.group("Home screen"))
+        // ---- Home ----------------------------------------------------------------------------
+        list.addView(ui.section("Home"))
         val isDefault = HomeRole.isDefault(host)
-        list.addView(ui.row("Default home screen", if (isDefault) "On" else "Set now") {
-            if (isDefault) HomeRole.openHomeSettings(host) else HomeRole.requestDefault(host)
-        })
-        list.addView(ui.row("Add the ReadFirst widget", "Any home screen") {
+        list.addView(ui.setting("Home app", value = if (isDefault) "ReadFirst" else "Not set") { homeAppSheet(isDefault) })
+        list.addView(ui.setting("Add widget", "Works on any home screen") {
             if (!app.readfirst.widget.ReadingWidget.requestPin(host)) {
                 Toast.makeText(host, "Long-press your home screen → Widgets → ReadFirst", Toast.LENGTH_LONG).show()
             }
         })
-        list.addView(ui.row("Pinned apps", "${prefs.pinned.size} / ${Prefs.MAX_PINS}") { pinnedSheet() })
-        list.addView(ui.row("Show dock on Library & Apps too", if (prefs.dockEverywhere) "On" else "Home only") {
-            prefs.dockEverywhere = !prefs.dockEverywhere
+        list.addView(ui.switchSetting("Dock on Library & Apps", "${prefs.pinned.size} of ${Prefs.MAX_PINS} apps in the dock", prefs.dockEverywhere) {
+            prefs.dockEverywhere = it
         })
-        list.addView(ui.row("Status bar", prefs.statusBarStyle.label) {
+        list.addView(ui.setting("Home status", value = prefs.statusBarStyle.label) {
             val values = app.readfirst.data.StatusBarStyle.entries
             prefs.statusBarStyle = values[(values.indexOf(prefs.statusBarStyle) + 1) % values.size]
         })
-        list.addView(ui.row("Open previous launcher once") {
-            if (!HomeRole.openOtherLauncherOnce(host)) Toast.makeText(host, "No other home app found", Toast.LENGTH_SHORT).show()
+        val canSilence = Ringer.hasAccess(host)
+        list.addView(ui.switchSetting("Ringer slider", if (canSilence) "On the right edge of Home" else "Silent needs access", prefs.ringerSlider) {
+            prefs.ringerSlider = it
         })
-        if (isDefault) list.addView(ui.row("Switch back to previous launcher") { HomeRole.switchBackToStock(host) })
-
-        list.addView(ui.group("Ringer"))
-        list.addView(ui.row("Ringer buttons in notifications", if (prefs.ringerNotification) "On" else "Off") {
-            RingerNotification.setEnabled(host, !prefs.ringerNotification)
+        list.addView(ui.switchSetting("Ringer in notifications", "Ring, vibrate, silent buttons", prefs.ringerNotification) {
+            RingerNotification.setEnabled(host, it)
         })
-        list.addView(ui.row("Silent mode", if (Ringer.hasAccess(host)) "Allowed" else "Allow access") {
-            if (!Ringer.openAccessSettings(host)) Toast.makeText(host, "Open Settings → Do Not Disturb access to allow ReadFirst", Toast.LENGTH_LONG).show()
-        })
-        list.addView(ui.text(
-            "Tap RING beside the clock on Home to step through ring, vibrate and silent; the same control can be added " +
-                "to quick settings as a tile. The notification keeps all three as buttons in the shade and on the lock screen. " +
+        list.addView(ui.setting("Silent mode access", value = if (canSilence) "Allowed" else "Not allowed") {
+            if (canSilence) openSilentAccess()
+            else ui.infoSheet(
+                host, "Silent mode",
                 "Android only lets an app switch Silent on or off with Do Not Disturb access, and treats Silent as Do Not Disturb.",
-            13f, p.soft,
-        ).apply { setLineSpacing(0f, 1.3f) }.also { ui.margins(it, 18, 10, 18, 6) })
-
-        list.addView(ui.group("Library & apps"))
-        list.addView(ui.row("Book folders", "${host.library.folders.size}") { foldersSheet() })
-        list.addView(ui.row("Free catalogs", "Gutenberg & more") { host.push(CatalogsScreen(host)) })
-        list.addView(ui.row("Find covers & details online", if (prefs.onlineMeta) "On" else "Off") {
-            prefs.onlineMeta = !prefs.onlineMeta
-            if (prefs.onlineMeta) app.readfirst.data.OnlineMeta.lookupPending(host)
+                "Open settings",
+            ) { openSilentAccess() }
         })
-        list.addView(ui.row("Hidden apps", "${prefs.hidden.size}") { hiddenSheet() })
-        list.addView(ui.row("E-reader sync", later = true))
 
-        list.addView(ui.group("About"))
-        list.addView(ui.row("Version", app.readfirst.BuildConfig.VERSION_NAME))
-        list.addView(ui.text("A small home screen that puts your books first.", 13f, p.soft).apply {
-            setLineSpacing(0f, 1.3f)
-        }.also { ui.margins(it, 18, 10, 18, 10) })
-        list.addView(ui.row("GitHub", "Project page") { openLink("https://sidbha-del.github.io/MinLauncher") })
-        list.addView(ui.row("Buy me a coffee", "Say thanks") { openLink("https://www.buymeacoffee.com/rashidua82") })
-        list.addView(ui.row("Suggest a feature", "Email") { suggestSheet() })
+        // ---- Listening -----------------------------------------------------------------------
+        list.addView(ui.section("Listening"))
+        val allowed = NowPlaying.get(host).isAllowed()
+        list.addView(ui.setting("Show audiobooks on Home", value = if (allowed) "On" else "Allow access") {
+            if (allowed) openMediaAccessSettings()
+            else ui.infoSheet(
+                host, "Now listening",
+                "Shows what Audible, Libby and other audiobook apps are playing. Android files this under notification access; ReadFirst only reads what's playing, never your notifications.",
+                "Open settings",
+            ) { openMediaAccessSettings() }
+        })
+        if (allowed) {
+            list.addView(ui.switchSetting("Include all audio", "Not only audiobook apps", prefs.nowPlayingAllAudio) { prefs.nowPlayingAllAudio = it })
+        }
+
+        // ---- Focus ---------------------------------------------------------------------------
+        list.addView(ui.section("Focus"))
+        val paused = app.readfirst.data.Focus.distracting(prefs, host.catalog).size
+        list.addView(ui.setting("Pause before apps", value = if (prefs.pauseEnabled) "$paused apps" else "Off") {
+            host.push(FocusAppsScreen(host))
+        })
+        val usage = app.readfirst.data.Focus.hasUsageAccess(host)
+        list.addView(ui.setting("Reading vs scrolling", if (usage) "Usage access is on" else "Needs usage access", value = if (usage) "On" else "Allow") {
+            TimeStats.openUsageAccess(host)
+        })
+        list.addView(ui.setting("Today's screen time") { TimeStats.sheet(host) })
+        val checks = app.readfirst.data.PhoneCheck.run(host)
+        if (checks.isNotEmpty()) {
+            list.addView(ui.setting("Device check", value = "${checks.size} to check") { deviceCheckSheet() })
+        }
+
+        // ---- Library -------------------------------------------------------------------------
+        list.addView(ui.section("Library"))
+        list.addView(ui.setting("Book folders", value = "${host.library.folders.size}") { foldersSheet() })
+        list.addView(ui.setting("Free catalogs", "Gutenberg and more") { host.push(CatalogsScreen(host)) })
+        list.addView(ui.switchSetting("Find covers online", "Also fills in book details", prefs.onlineMeta) {
+            prefs.onlineMeta = it
+            if (it) app.readfirst.data.OnlineMeta.lookupPending(host)
+        })
+        list.addView(ui.setting("Hidden apps", value = "${prefs.hidden.size}") { hiddenSheet() })
+
+        // ---- About ---------------------------------------------------------------------------
+        list.addView(ui.section("About"))
+        list.addView(ui.setting("Version", value = app.readfirst.BuildConfig.VERSION_NAME))
+        list.addView(ui.setting("Project page", "On GitHub") { openLink("https://sidbha-del.github.io/MinLauncher") })
+        list.addView(ui.setting("Buy me a coffee", "Say thanks") { openLink("https://www.buymeacoffee.com/rashidua82") })
+        list.addView(ui.setting("Suggest a feature", "Opens your mail app") { suggestSheet() })
 
         val scroll = ScrollView(host).apply { addView(list) }
         // Changing a setting rebuilds the screen; keep the reader where they were.
@@ -148,6 +123,48 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
         scroll.viewTreeObserver.addOnScrollChangedListener { savedScroll = scroll.scrollY }
         col.addView(scroll, ui.lp(h = 0, weight = 1f))
         return col
+    }
+
+    /** The old three launcher-role rows in one place: make default (or change it), try the old one, go back. */
+    private fun homeAppSheet(isDefault: Boolean) {
+        val col = ui.vertical()
+        col.addView(ui.mono("Home app", 11f).also { ui.margins(it, 18, 16, 18, 8) })
+        col.addView(ui.rule())
+        col.addView(ui.row(if (isDefault) "Change in Android settings" else "Make ReadFirst your home app", if (isDefault) "Default now" else null) {
+            host.dismissSheet(refresh = false)
+            if (isDefault) HomeRole.openHomeSettings(host) else HomeRole.requestDefault(host)
+        })
+        col.addView(ui.row("Open previous launcher once") {
+            host.dismissSheet(refresh = false)
+            if (!HomeRole.openOtherLauncherOnce(host)) Toast.makeText(host, "No other home app found", Toast.LENGTH_SHORT).show()
+        })
+        if (isDefault) col.addView(ui.row("Switch back to previous launcher") {
+            host.dismissSheet(refresh = false)
+            HomeRole.switchBackToStock(host)
+        })
+        host.showSheet(col)
+    }
+
+    private fun deviceCheckSheet() {
+        val col = ui.vertical()
+        col.addView(ui.mono("Device check", 11f).also { ui.margins(it, 18, 16, 18, 4) })
+        col.addView(ui.text("Some brands stop apps to save battery.", 13f, p.soft).also { ui.margins(it, 18, 0, 18, 10) })
+        col.addView(ui.rule())
+        val checks = app.readfirst.data.PhoneCheck.run(host)
+        if (checks.isEmpty()) col.addView(ui.row("Everything looks good", "✓"))
+        for (c in checks) {
+            col.addView(ui.row(c.title, if (c.level == app.readfirst.data.PhoneCheck.Level.PROBLEM) "Fix" else "Check") {
+                if (c.id == "folders") host.pickFolder()
+                else if (!c.fix(host)) Toast.makeText(host, c.hint, Toast.LENGTH_LONG).show()
+            })
+        }
+        host.showSheet(col)
+        // Coming back from Android's settings, show what is still wrong.
+        host.sheetRefresh = { deviceCheckSheet() }
+    }
+
+    private fun openSilentAccess() {
+        if (!Ringer.openAccessSettings(host)) Toast.makeText(host, "Open Settings → Do Not Disturb access to allow ReadFirst", Toast.LENGTH_LONG).show()
     }
 
     private var savedScroll = 0
@@ -203,24 +220,6 @@ class SettingsScreen(host: HomeActivity) : Screen(host) {
         if (!app.readfirst.data.PhoneCheck.open(host, mail)) {
             Toast.makeText(host, "No mail app found on this device", Toast.LENGTH_LONG).show()
         }
-    }
-
-    private fun pinnedSheet() {
-        val col = ui.vertical()
-        col.addView(ui.mono("Pinned apps", 11f).also { ui.margins(it, 18, 16, 18, 8) })
-        col.addView(ui.rule())
-        val byKey = host.catalog.apps.associateBy { it.key }
-        val pinned = host.prefs.pinned
-        if (pinned.isEmpty()) {
-            col.addView(ui.text("Long-press any app in Apps and choose Pin to home. Up to ${Prefs.MAX_PINS}.", 14f, p.soft).apply {
-                setPadding(ui.dp(18), ui.dp(16), ui.dp(18), ui.dp(20))
-            })
-        }
-        for (key in pinned) {
-            val label = byKey[key]?.let { host.prefs.label(key, it.label) } ?: "Uninstalled app"
-            col.addView(ui.row(label, "Unpin") { host.prefs.pinned = host.prefs.pinned - key; pinnedSheet() })
-        }
-        host.showSheet(col)
     }
 
     private fun hiddenSheet() {
