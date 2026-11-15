@@ -20,8 +20,8 @@ android {
         applicationId = "app.readfirst"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.2.1"
+        versionCode = 6
+        versionName = "1.2.2"
     }
 
     signingConfigs {
@@ -58,4 +58,6 @@ android {
 // PDF with the platform PdfRenderer, pagination with StaticLayout.
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    // The Android jar only has stubs of org.json; the weather parser is tested against the real one.
+    testImplementation("org.json:json:20231013")
 }

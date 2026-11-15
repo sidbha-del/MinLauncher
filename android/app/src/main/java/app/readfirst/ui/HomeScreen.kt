@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.net.Uri
 import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
@@ -258,11 +257,7 @@ class HomeScreen(host: HomeActivity) : Screen(host) {
         }
     }
 
-    private fun openWeather() {
-        if (!PhoneCheck.open(host, Intent(Intent.ACTION_VIEW, Uri.parse(Weather.WEB_URL)))) {
-            Toast.makeText(host, "No browser found on this device", Toast.LENGTH_SHORT).show()
-        }
-    }
+    private fun openWeather() = WeatherSheet.show(host)
 
     // ---- reading ------------------------------------------------------------------------------
 
