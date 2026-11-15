@@ -82,6 +82,7 @@ class ReaderActivity : Activity() {
             return
         }
         entry = found
+        current = this
         ui = Ui(this, InkPalette.of(prefs.ink, prefs.readerPage))
         root = FrameLayout(this)
         setContentView(root)
@@ -96,12 +97,13 @@ class ReaderActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        showing = this
+        resumed = true
         readingTimer.start()
     }
 
     override fun onPause() {
-        if (showing === this) showing = null
+        resumed = false
+        pausedAt = android.os.SystemClock.elapsedRealtime()
         super.onPause()
         readingTimer.stop()
         save()
@@ -109,6 +111,7 @@ class ReaderActivity : Activity() {
     }
 
     override fun onDestroy() {
+        if (current === this) current = null
         engine?.close()
         pdf?.close()
         super.onDestroy()
@@ -694,8 +697,12 @@ class ReaderActivity : Activity() {
     companion object {
         const val EXTRA_ID = "book_id"
 
-        /** The reader in front right now, if any: lets [app.readfirst.BookToggleActivity] close it. */
-        @Volatile var showing: ReaderActivity? = null
+        /** The reader that exists (created, not yet destroyed), whether or not it is in front. Lets
+         *  [app.readfirst.BookToggleActivity] close it. [resumed] / [pausedAt] say whether it was just in front:
+         *  starting the toggle screen pauses the reader first, so "in front" has to allow a moment of grace. */
+        @Volatile var current: ReaderActivity? = null
+        @Volatile var resumed = false
+        @Volatile var pausedAt = 0L
         private val MARGINS = intArrayOf(12, 20, 30, 42)
         private val loader = Executors.newSingleThreadExecutor()
     }

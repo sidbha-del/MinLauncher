@@ -3,6 +3,7 @@ package app.readfirst
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock
 import app.readfirst.data.Library
 import app.readfirst.reader.ReaderActivity
 
@@ -14,10 +15,12 @@ import app.readfirst.reader.ReaderActivity
 class BookToggleActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val open = ReaderActivity.showing
-        if (open != null) {
-            open.finish()
-        } else {
+        val reader = ReaderActivity.current
+        // Just in front (this screen paused it a moment ago) = the user is reading: close the book. A reader hidden
+        // behind other things is closed too, and the last book opened afresh in front.
+        val inFront = reader != null && (ReaderActivity.resumed || SystemClock.elapsedRealtime() - ReaderActivity.pausedAt < 2500)
+        reader?.finish()
+        if (!inFront) {
             Library.get(this).current()?.let {
                 startActivity(Intent(this, ReaderActivity::class.java).putExtra(ReaderActivity.EXTRA_ID, it.id))
             }
